@@ -4,7 +4,6 @@ import {
   resolveAccent,
   useT,
   type AuthUser,
-  useAppUpdate,
   APP_VERSION_LABEL,
   useStudioPreferences,
   useNavigationStore,
@@ -72,7 +71,6 @@ export default function WebSidebarLayout({ shouldHideSidebar = false }: { should
   const { preferences } = useStudioPreferences();
   const isReduced = preferences.reduceMotion;
   const t = useT();
-  const updater = useAppUpdate();
 
   const [authUser, setAuthUser] = useState<AuthUser | null>(null);
   const [customPhoto, setCustomPhoto] = useState<string | null>(null);
@@ -495,21 +493,6 @@ export default function WebSidebarLayout({ shouldHideSidebar = false }: { should
                           settings
                         </span>
                         <span>Settings</span>
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          handleGoToSettingsPage('release-notes');
-                          setShowProfileMenu(false);
-                          setOpen(false);
-                        }}
-                        style={profileMenuBtnStyle}
-                        className="btn-smooth hover:bg-[var(--sidebar-hover-bg)]"
-                      >
-                        <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
-                          article
-                        </span>
-                        <span>Release Notes</span>
                       </button>
 
                       <button

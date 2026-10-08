@@ -4,8 +4,6 @@ export type HubTab = 'home' | 'settings' | 'profile' | 'help' | 'assistant';
 export type HelpPageId =
   | 'help-center'
   | 'faq'
-  | 'release-notes'
-  | 'download-apps'
   | 'keyboard-shortcuts'
   | 'terms'
   | 'privacy-policy'

@@ -38,7 +38,6 @@ import {
   SUPPORTED_LANGUAGES,
 } from '../../../../shared/settings/LanguagePickerSheet';
 import { ThemeToggle } from '../../../../components/motion/theme-toggle';
-import ChangelogSheet from '../../../chordex/components/ChangelogSheet';
 import StudioHubSettingsPanel from '.././StudioHubSettingsPanel';
 import {
   ChordexLogo,
@@ -78,24 +77,12 @@ import {
   useScrollHide,
   setNavHidden,
   useT,
-  useAppUpdate,
   APP_VERSION_LABEL,
   APP_VERSION_TAG,
   APP_VERSION_DATE,
   compareSemver,
   APP_VERSION,
-  getChangelogSections,
-  RELEASE_HISTORY,
-  updateDebugLogs,
-  updateDiagnostics,
-  checkForUpdate,
-  resetAppUpdateState,
-  isAppInstallerAvailable,
-  applyUpdate,
   fadeToBlackAndReload,
-  resolveApkUrl,
-  downloadAndInstallApk,
-  resolveReleasePageUrl,
   useIsWebDesktop,
   useStudioPreferences,
   registerDebugProvider,
@@ -113,11 +100,7 @@ import {
   EasingPresets,
   SpringPresets,
   authRepository,
-  getUpdateHistory,
   StartupCoordinator,
-  startDiagnosticsSession,
-  resetUpdateTimeline,
-  getTimelineReport,
   settingsController,
   getUserCover,
   subscribeUserCover,
@@ -134,7 +117,6 @@ import {
   getSessionIndex,
 } from '../../components/hubConstants';
 import { HelpAccordion } from '../../components/faqConstants';
-import { ChangelogView } from '../../components/HubChangelogView';
 
 export type SettingsPageId =
   | 'main'
@@ -143,15 +125,12 @@ export type SettingsPageId =
   | 'language'
   | 'privacy'
   | 'about'
-  | 'updater'
   | 'notifications'
   | 'debug'
   | 'developer'
   | 'profile'
   | 'help-center'
   | 'faq'
-  | 'release-notes'
-  | 'download-apps'
   | 'keyboard-shortcuts'
   | 'terms'
   | 'privacy-policy'
@@ -161,8 +140,7 @@ export type SettingsPageId =
   | 'subscription'
   | 'devices-sessions'
   | 'privacy-data'
-  | 'licenses'
-  | 'changelog';
+  | 'licenses';
 
 const syncController = {
   syncNow: () => {},
@@ -198,7 +176,6 @@ export function HelpContent(props: any) {
   const t = useT();
   const tr = t as any;
   const isWebDesktop = useIsWebDesktop();
-  const updater = useAppUpdate();
   return (
       <div
         style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)', marginTop: 8 }}
@@ -229,7 +206,6 @@ export function HelpCenterContent(props: any) {
   const t = useT();
   const tr = t as any;
   const isWebDesktop = useIsWebDesktop();
-  const updater = useAppUpdate();
   return <HelpAccordion accent={accent} lang={lang} />;
 }
 
@@ -254,374 +230,9 @@ export function FaqContent(props: any) {
   const t = useT();
   const tr = t as any;
   const isWebDesktop = useIsWebDesktop();
-  const updater = useAppUpdate();
   return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
         <HelpAccordion accent={accent} lang={lang} />
-      </div>
-    );
-}
-
-export function ReleaseNotesContent(props: any) {
-  const { accent, showDevToast, openLink, user, authUser, handleSignOut, syncStatus, cachedStorageSize, clearCacheAndReload, isAmoled, isLight, langQuery, setLangQuery, handleLogoTap, navigate, cardStyle, goBack } = props;
-  const settings = useSettingsStore(useShallow((state: any) => ({
-      theme: state.settings.theme,
-      amoledMode: state.settings.amoledMode,
-      perApp: state.settings.perApp,
-      language: state.settings.language,
-      developerMode: state.settings.developerMode,
-      swipeBackBehavior: state.settings.swipeBackBehavior,
-      hapticFeedback: state.settings.hapticFeedback,
-      highRefreshRate: state.settings.highRefreshRate,
-      lowLatencyMode: state.settings.lowLatencyMode,
-      performanceMode: state.settings.performanceMode,
-  })));
-  const updateSettings = useSettingsStore((state: any) => state.updateSettings);
-  const updatePerApp = useSettingsStore((state: any) => state.updatePerApp);
-  const { preferences, setPreference } = useStudioPreferences();
-  const lang = settings.language ?? 'en';
-  const t = useT();
-  const tr = t as any;
-  const isWebDesktop = useIsWebDesktop();
-  const updater = useAppUpdate();
-  const changelogSections = getChangelogSections(lang) || [];
-    return (
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 'var(--space-5)',
-          paddingBottom: 'var(--space-6)',
-        }}
-      >
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'baseline',
-            gap: 12,
-            paddingBottom: 12,
-            borderBottom: '1px solid rgba(128, 128, 128, 0.08)',
-          }}
-        >
-          <span style={{ fontSize: 20, fontWeight: 800, color: 'var(--c-text-primary)' }}>
-            v{APP_VERSION}
-          </span>
-          <span style={{ fontSize: 12, color: 'var(--c-text-secondary)' }}>
-            Released on {APP_VERSION_DATE}
-          </span>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
-          {changelogSections.map((sec, i) => (
-            <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <h3
-                style={{
-                  fontSize: 'var(--font-section-label)',
-                  fontWeight: 700,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.08em',
-                  color: 'var(--c-text-secondary)',
-                  opacity: 0.6,
-                  margin: 0,
-                }}
-              >
-                {sec.heading}
-              </h3>
-              <ul
-                style={{
-                  listStyle: 'none',
-                  padding: 0,
-                  margin: 0,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 8,
-                }}
-              >
-                {sec.items.map((item, j) => (
-                  <li
-                    key={j}
-                    style={{
-                      display: 'flex',
-                      gap: 10,
-                      fontSize: 13,
-                      color: 'var(--c-text-secondary)',
-                      lineHeight: 1.5,
-                    }}
-                  >
-                    <span
-                      style={{
-                        width: 4,
-                        height: 4,
-                        borderRadius: '50%',
-                        background: accent.from,
-                        marginTop: 7,
-                        flexShrink: 0,
-                      }}
-                    />
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-}
-
-export function ChangelogContent(props: any) {
-  const { accent, showDevToast, openLink, user, authUser, handleSignOut, syncStatus, cachedStorageSize, clearCacheAndReload, isAmoled, isLight, langQuery, setLangQuery, handleLogoTap, navigate, cardStyle, goBack } = props;
-  const settings = useSettingsStore(useShallow((state: any) => ({
-      theme: state.settings.theme,
-      amoledMode: state.settings.amoledMode,
-      perApp: state.settings.perApp,
-      language: state.settings.language,
-      developerMode: state.settings.developerMode,
-      swipeBackBehavior: state.settings.swipeBackBehavior,
-      hapticFeedback: state.settings.hapticFeedback,
-      highRefreshRate: state.settings.highRefreshRate,
-      lowLatencyMode: state.settings.lowLatencyMode,
-      performanceMode: state.settings.performanceMode,
-  })));
-  const updateSettings = useSettingsStore((state: any) => state.updateSettings);
-  const updatePerApp = useSettingsStore((state: any) => state.updatePerApp);
-  const { preferences, setPreference } = useStudioPreferences();
-  const lang = settings.language ?? 'en';
-  const t = useT();
-  const tr = t as any;
-  const isWebDesktop = useIsWebDesktop();
-  const updater = useAppUpdate();
-  return <ChangelogView lang={lang} accent={accent} />;
-}
-
-export function DownloadAppsContent(props: any) {
-  const { accent, showDevToast, openLink, user, authUser, handleSignOut, syncStatus, cachedStorageSize, clearCacheAndReload, isAmoled, isLight, langQuery, setLangQuery, handleLogoTap, navigate, cardStyle, goBack } = props;
-  const [firebaseAppReleaseJson, setFirebaseAppReleaseJson] = useState<string>('Loading...');
-  const settings = useSettingsStore(useShallow((state: any) => ({
-      theme: state.settings.theme,
-      amoledMode: state.settings.amoledMode,
-      perApp: state.settings.perApp,
-      language: state.settings.language,
-      developerMode: state.settings.developerMode,
-      swipeBackBehavior: state.settings.swipeBackBehavior,
-      hapticFeedback: state.settings.hapticFeedback,
-      highRefreshRate: state.settings.highRefreshRate,
-      lowLatencyMode: state.settings.lowLatencyMode,
-      performanceMode: state.settings.performanceMode,
-  })));
-  const updateSettings = useSettingsStore((state: any) => state.updateSettings);
-  const updatePerApp = useSettingsStore((state: any) => state.updatePerApp);
-  const { preferences, setPreference } = useStudioPreferences();
-  const lang = settings.language ?? 'en';
-  const t = useT();
-  const tr = t as any;
-  const isWebDesktop = useIsWebDesktop();
-  const updater = useAppUpdate();
-  let apkVersion = '3.6.28';
-    let apkSize = '13.47 MB';
-    let apkUrl = 'https://github.com/MAGEXE1000/Livex/releases/download/v3.6.28/studio-3.6.28.apk';
-
-    try {
-      if (
-        firebaseAppReleaseJson &&
-        !firebaseAppReleaseJson.startsWith('Error') &&
-        firebaseAppReleaseJson !== 'Loading...'
-      ) {
-        const parsed = JSON.parse(firebaseAppReleaseJson);
-        if (parsed.version) apkVersion = parsed.version;
-        if (parsed.apkSizeBytes) apkSize = `${(parsed.apkSizeBytes / (1024 * 1024)).toFixed(2)} MB`;
-        if (parsed.apkUrl) apkUrl = parsed.apkUrl;
-      }
-    } catch (e) {
-      console.warn('Failed to parse firebaseAppReleaseJson:', e);
-    }
-
-    return (
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 'var(--space-6)',
-          paddingBottom: 'var(--space-6)',
-        }}
-      >
-        {/* Android Card */}
-        <div
-          style={{
-            padding: 20,
-            background: 'rgba(255, 255, 255, 0.02)',
-            border: '1px solid rgba(128, 128, 128, 0.08)',
-            borderRadius: 16,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 16,
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              width: '100%',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <span
-                className="material-symbols-outlined"
-                style={{ fontSize: 32, color: accent.from }}
-              >
-                adb
-              </span>
-              <div>
-                <h3
-                  style={{
-                    margin: 0,
-                    fontSize: 16,
-                    fontWeight: 800,
-                    color: 'var(--c-text-primary)',
-                  }}
-                >
-                  Android App (APK)
-                </h3>
-                <span style={{ fontSize: 12, color: 'var(--c-text-secondary)' }}>
-                  v{apkVersion} • {apkSize}
-                </span>
-              </div>
-            </div>
-            <a
-              href={apkUrl}
-              style={{
-                textDecoration: 'none',
-                padding: '8px 16px',
-                background: accent.from,
-                color: '#fff',
-                fontSize: 13,
-                fontWeight: 700,
-                borderRadius: 8,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-              }}
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-                download
-              </span>
-              Download APK
-            </a>
-          </div>
-          <div style={{ height: 1, borderTop: '1px solid rgba(128, 128, 128, 0.08)' }} />
-          <p style={{ margin: 0, fontSize: 12, color: 'var(--c-text-secondary)', lineHeight: 1.5 }}>
-            To install: download and run the APK on your device. You may need to enable "Install
-            from Unknown Sources" in your system security settings.
-          </p>
-        </div>
-
-        {/* Web App / PWA Card */}
-        <div
-          style={{
-            padding: 20,
-            background: 'rgba(255, 255, 255, 0.02)',
-            border: '1px solid rgba(128, 128, 128, 0.08)',
-            borderRadius: 16,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 16,
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              width: '100%',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <span
-                className="material-symbols-outlined"
-                style={{ fontSize: 32, color: accent.from }}
-              >
-                language
-              </span>
-              <div>
-                <h3
-                  style={{
-                    margin: 0,
-                    fontSize: 16,
-                    fontWeight: 800,
-                    color: 'var(--c-text-primary)',
-                  }}
-                >
-                  Web Version (PWA)
-                </h3>
-                <span style={{ fontSize: 12, color: 'var(--c-text-secondary)' }}>v4.0.0 (Web)</span>
-              </div>
-            </div>
-            <div
-              style={{
-                fontSize: 12,
-                fontWeight: 700,
-                color: accent.from,
-                background: `${accent.from}22`,
-                padding: '6px 12px',
-                borderRadius: 8,
-              }}
-            >
-              Running Now
-            </div>
-          </div>
-          <div style={{ height: 1, borderTop: '1px solid rgba(128, 128, 128, 0.08)' }} />
-          <p style={{ margin: 0, fontSize: 12, color: 'var(--c-text-secondary)', lineHeight: 1.5 }}>
-            Enjoy the full experience on any desktop or mobile device. Install as a Progressive Web
-            App (PWA) directly via your browser's install menu for offline support and standalone
-            window display.
-          </p>
-        </div>
-
-        {/* iOS & Desktop Cards - Coming Soon */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-          {[
-            { platform: 'iOS App', icon: 'phone_iphone' },
-            { platform: 'Desktop (macOS / Windows)', icon: 'desktop_windows' },
-          ].map((item, i) => (
-            <div
-              key={i}
-              style={{
-                padding: 16,
-                background: 'rgba(255, 255, 255, 0.01)',
-                border: '1px solid rgba(128, 128, 128, 0.06)',
-                borderRadius: 12,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 8,
-                opacity: 0.7,
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span
-                  className="material-symbols-outlined"
-                  style={{ fontSize: 20, color: 'var(--c-text-secondary)' }}
-                >
-                  {item.icon}
-                </span>
-                <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--c-text-primary)' }}>
-                  {item.platform}
-                </span>
-              </div>
-              <span
-                style={{
-                  fontSize: 'var(--font-section-label)',
-                  fontWeight: 700,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                  color: accent.from,
-                  opacity: 0.8,
-                }}
-              >
-                Coming soon
-              </span>
-            </div>
-          ))}
-        </div>
       </div>
     );
 }
@@ -647,7 +258,6 @@ export function KeyboardShortcutsContent(props: any) {
   const t = useT();
   const tr = t as any;
   const isWebDesktop = useIsWebDesktop();
-  const updater = useAppUpdate();
   const categories = [
       {
         title: 'Stage Mode (Stagex)',
@@ -767,7 +377,6 @@ export function TermsContent(props: any) {
   const t = useT();
   const tr = t as any;
   const isWebDesktop = useIsWebDesktop();
-  const updater = useAppUpdate();
   return (
       <SettingsContentContainer
         style={{
@@ -910,7 +519,6 @@ export function PrivacyPolicyContent(props: any) {
   const t = useT();
   const tr = t as any;
   const isWebDesktop = useIsWebDesktop();
-  const updater = useAppUpdate();
   return (
       <SettingsContentContainer
         style={{
@@ -1051,7 +659,6 @@ export function BugReportContent(props: any) {
   const t = useT();
   const tr = t as any;
   const isWebDesktop = useIsWebDesktop();
-  const updater = useAppUpdate();
   return <HelpCenterContent {...props} />;
 }
 

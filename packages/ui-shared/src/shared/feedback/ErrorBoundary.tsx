@@ -2,7 +2,6 @@ import { NavigationDispatcher, addError, processDiagnosticReport } from '@worksp
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import {
   useChordStore,
-  globalUpdateState,
   useSettingsStore,
   useBottomNavigationStore,
 } from '@workspace/livex-core';
@@ -602,10 +601,7 @@ export class ErrorBoundary extends Component<Props, State> {
       const hostFiber = (this as any)._reactInternals || (this as any)._reactInternalFiber;
       const fiberDiag = extractFiberDiagnostics(hostFiber, errorInfo?.componentStack || '');
 
-      let currentUpdaterState = 'unknown';
-      try {
-        currentUpdaterState = globalUpdateState.updateState;
-      } catch (_) {}
+      const currentUpdaterState = 'disabled';
 
       let lastOtaTransition = 'none';
       if (typeof window !== 'undefined') {

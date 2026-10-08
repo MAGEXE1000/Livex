@@ -21,7 +21,6 @@ export {
 
 // Settings
 export { default as LivexHubSettingsPanel, default as StudioHubSettingsPanel } from './settings/LivexHubSettingsPanel';
-export { default as HubChangelogSection } from './settings/HubChangelogSection';
 
 // Icons
 export * from './icons/NavIcons';

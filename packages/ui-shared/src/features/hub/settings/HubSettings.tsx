@@ -40,7 +40,6 @@ import {
   SUPPORTED_LANGUAGES,
 } from '../../../shared/settings/LanguagePickerSheet';
 import { ThemeToggle } from '../../../components/motion/theme-toggle';
-import ChangelogSheet from '../../chordex/components/ChangelogSheet';
 import StudioHubSettingsPanel from './StudioHubSettingsPanel';
 import {
   ChordexLogo,
@@ -80,24 +79,12 @@ import {
   useScrollHide,
   setNavHidden,
   useT,
-  useAppUpdate,
   APP_VERSION_LABEL,
   APP_VERSION_TAG,
   APP_VERSION_DATE,
   compareSemver,
   APP_VERSION,
-  getChangelogSections,
-  RELEASE_HISTORY,
-  updateDebugLogs,
-  updateDiagnostics,
-  checkForUpdate,
-  resetAppUpdateState,
-  isAppInstallerAvailable,
-  applyUpdate,
   fadeToBlackAndReload,
-  resolveApkUrl,
-  downloadAndInstallApk,
-  resolveReleasePageUrl,
   useIsWebDesktop,
   useStudioPreferences,
   registerDebugProvider,
@@ -115,11 +102,7 @@ import {
   EasingPresets,
   SpringPresets,
   authRepository,
-  getUpdateHistory,
   StartupCoordinator,
-  startDiagnosticsSession,
-  resetUpdateTimeline,
-  getTimelineReport,
   settingsController,
   getUserCover,
   subscribeUserCover,
@@ -136,7 +119,6 @@ import {
   getSessionIndex,
 } from '../components/hubConstants';
 import { HelpAccordion } from '../components/faqConstants';
-import { ChangelogView } from '../components/HubChangelogView';
 
 export type SettingsPageId =
   | 'main'
@@ -145,15 +127,12 @@ export type SettingsPageId =
   | 'language'
   | 'privacy'
   | 'about'
-  | 'updater'
   | 'notifications'
   | 'debug'
   | 'developer'
   | 'profile'
   | 'help-center'
   | 'faq'
-  | 'release-notes'
-  | 'download-apps'
   | 'keyboard-shortcuts'
   | 'terms'
   | 'privacy-policy'
@@ -163,8 +142,7 @@ export type SettingsPageId =
   | 'subscription'
   | 'devices-sessions'
   | 'privacy-data'
-  | 'licenses'
-  | 'changelog';
+  | 'licenses';
 
 const syncController = {
   syncNow: () => {},
@@ -178,7 +156,7 @@ export function formatHour(h: number): string {
 }
 import { HUB_SETTINGS_CSS } from './hubSettingsStyles';
 
-import { HelpContent, HelpCenterContent, FaqContent, ReleaseNotesContent, ChangelogContent, DownloadAppsContent, KeyboardShortcutsContent, TermsContent, PrivacyPolicyContent, BugReportContent } from './pages/HelpSettingsPage';
+import { HelpContent, HelpCenterContent, FaqContent, KeyboardShortcutsContent, TermsContent, PrivacyPolicyContent, BugReportContent } from './pages/HelpSettingsPage';
 import { GeneralContent } from './pages/GeneralSettingsPage';
 import { PrivacyContent } from './pages/PrivacySettingsPage';
 import { AboutContent } from './pages/AboutSettingsPage';
@@ -216,287 +194,6 @@ function GlobalHint() {
       >
         {t.hub.appliesToAll}
       </p>
-    </div>
-  );
-}
-
-function getUpdaterStatusText(updater: any, lang: string) {
-  if (updater.loading) {
-    if (['DOWNLOAD_APK', 'VERIFY_SHA256', 'PREPARING_INSTALL'].includes(updater.updateState)) {
-      return lang === 'es' ? 'Descargando…' : 'Downloading...';
-    }
-    if (updater.updateState === 'INSTALLING') {
-      return lang === 'es' ? 'Instalando…' : 'Installing...';
-    }
-    return lang === 'es' ? 'Buscando actualizaciones…' : 'Checking for updates...';
-  }
-
-  if (
-    updater.updateState === 'WAITING_USER_CONFIRMATION' ||
-    updater.updateState === 'PACKAGEINSTALLER_VISIBLE'
-  ) {
-    return lang === 'es' ? 'Listo para instalar' : 'Ready to install';
-  }
-
-  if (['INSTALL_FAILED', 'RECOVERY'].includes(updater.updateState)) {
-    return lang === 'es' ? 'Error al instalar' : 'Failed';
-  }
-
-  if (updater.updateAvailable) {
-    return lang === 'es' ? 'Actualización disponible' : 'Update available';
-  }
-
-  return lang === 'es' ? 'Al día' : 'Up to date';
-}
-
-function UpdaterSettingsContent({
-  lang,
-  updater,
-  accent,
-  showDevToast,
-  navigate,
-}: {
-  lang: string;
-  updater: any;
-  accent: { from: string; to: string; mid?: string };
-  showDevToast: (msg: string) => void;
-  navigate: (page: SettingsPageId) => void;
-}) {
-  const isNative = Capacitor.isNativePlatform();
-  const [autoUpdates, setAutoUpdates] = useState(() => {
-    return localStorage.getItem('studio:automatic_updates') !== 'false';
-  });
-  const handleToggleAutoUpdates = (val: boolean) => {
-    setAutoUpdates(val);
-    localStorage.setItem('studio:automatic_updates', String(val));
-  };
-
-  return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 'var(--space-4)',
-        width: '100%',
-        paddingBottom: 'var(--space-6)',
-      }}
-    >
-      <SettingSection title={lang === 'es' ? 'SISTEMA DE ACTUALIZACIONES' : 'UPDATE SYSTEM'}>
-        {/* Current Version */}
-        <SettingRow
-          label={lang === 'es' ? 'Versión actual' : 'Current Version'}
-          desc={`${APP_VERSION_TAG} ${APP_VERSION} (Build ${APP_VERSION_DATE})`}
-        >
-          <span style={{ fontSize: 12, color: 'var(--c-text-secondary)', fontWeight: 600 }}>
-            {lang === 'es' ? 'Instalado' : 'Installed'}
-          </span>
-        </SettingRow>
-
-        {/* Check for Updates */}
-        <SettingRow
-          label={lang === 'es' ? 'Buscar actualizaciones' : 'Check for Updates'}
-          desc={getUpdaterStatusText(updater, lang)}
-        >
-          {updater.loading ? (
-            <span
-              className="material-symbols-outlined"
-              style={{
-                fontSize: 18,
-                color: accent.from,
-                animation: 'updater-check-spin 1s linear infinite',
-                display: 'inline-block',
-              }}
-            >
-              refresh
-            </span>
-          ) : updater.updateAvailable ? (
-            <Button
-              size="sm"
-              variant="primary"
-              onClick={() => updater.openModal()}
-              icon={
-                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-                  {['WAITING_USER_CONFIRMATION', 'PACKAGEINSTALLER_VISIBLE'].includes(
-                    updater.updateState
-                  )
-                    ? 'install_mobile'
-                    : 'download'}
-                </span>
-              }
-            >
-              {['WAITING_USER_CONFIRMATION', 'PACKAGEINSTALLER_VISIBLE'].includes(
-                updater.updateState
-              )
-                ? lang === 'es'
-                  ? 'Instalar'
-                  : 'Install Update'
-                : lang === 'es'
-                  ? 'Continuar'
-                  : 'Continue Update'}
-            </Button>
-          ) : (
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={async () => {
-                await updater.checkNow();
-              }}
-            >
-              {lang === 'es' ? 'Buscar' : 'Check Now'}
-            </Button>
-          )}
-        </SettingRow>
-
-        {/* Automatic Updates */}
-        <SettingRow
-          label={lang === 'es' ? 'Actualizaciones automáticas' : 'Automatic Updates'}
-          desc={
-            lang === 'es'
-              ? 'Buscar y descargar compilaciones en segundo plano'
-              : 'Check and download builds in the background'
-          }
-        >
-          <Toggle value={autoUpdates} onChange={handleToggleAutoUpdates} />
-        </SettingRow>
-
-        {/* Update Diagnostics */}
-        <SettingRow
-          label={lang === 'es' ? 'Diagnósticos de actualización' : 'Update Diagnostics'}
-          desc={
-            lang === 'es'
-              ? 'Copiar informes de depuración y estado del actualizador'
-              : 'Copy debug reports and check recovery logs'
-          }
-        >
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={async () => {
-              try {
-                const report = await updater.getDiagnosticsReport();
-                await navigator.clipboard.writeText(report);
-                showDevToast(
-                  lang === 'es' ? 'Copiado al portapapeles' : 'Copied report to clipboard'
-                );
-              } catch (e) {
-                alert(e instanceof Error ? e.message : String(e));
-              }
-            }}
-            icon={
-              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-                content_copy
-              </span>
-            }
-          >
-            {lang === 'es' ? 'Copiar' : 'Copy'}
-          </Button>
-        </SettingRow>
-
-        {/* Changelog */}
-        <SettingRow
-          label={lang === 'es' ? 'Historial de cambios' : 'Changelog'}
-          desc={
-            lang === 'es'
-              ? 'Ver notas de lanzamiento completas'
-              : 'View full chronological release notes'
-          }
-        >
-          <button
-            onClick={() => navigate('changelog')}
-            className="btn-smooth animate-click"
-            style={{
-              padding: '6px 14px',
-              borderRadius: 10,
-              background: 'var(--c-surface-low)',
-              color: 'var(--c-text-primary)',
-              border: '1px solid var(--c-border)',
-              fontSize: 'var(--font-section-label)',
-              fontWeight: 700,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 4,
-            }}
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-              history
-            </span>
-            {lang === 'es' ? 'Ver' : 'View'}
-          </button>
-        </SettingRow>
-      </SettingSection>
-
-      {/* About this Update */}
-      {updater.updateAvailable && updater.changelog && (
-        <SettingSection
-          title={lang === 'es' ? 'ACERCA DE ESTA ACTUALIZACIÓN' : 'ABOUT THIS UPDATE'}
-        >
-          <div
-            style={{
-              padding: 'var(--density-row-pad)',
-              color: 'var(--c-text-secondary)',
-              fontSize: 13,
-              lineHeight: 1.6,
-            }}
-          >
-            <p style={{ margin: '0 0 10px 0', fontWeight: 700, color: 'var(--c-text-primary)' }}>
-              {lang === 'es' ? 'Novedades en v' : "What's new in v"}
-              {updater.remoteVersion}:
-            </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {updater.changelog.split('\n').map((line: string, idx: number) => {
-                const cleanLine = line.replace(/^[•\s*-]+/g, '').trim();
-                if (!cleanLine) return null;
-                return (
-                  <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                    <span style={{ color: accent.from, marginTop: 1 }}>•</span>
-                    <span>{cleanLine}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </SettingSection>
-      )}
-
-      {/* Recovery official releases link */}
-      {isNative && (
-        <SettingSection title={lang === 'es' ? 'RECUPERACIÓN' : 'RECOVERY'}>
-          <SettingRow
-            label={lang === 'es' ? 'Descargas oficiales' : 'Official Downloads'}
-            desc={
-              lang === 'es'
-                ? 'Descargar compilaciones firmadas desde GitHub'
-                : 'Download signed production builds from GitHub'
-            }
-          >
-            <button
-              onClick={() =>
-                window.open('https://github.com/MAGEXE1000/Livex/releases', '_system')
-              }
-              className="btn-smooth animate-click"
-              style={{
-                padding: '6px 14px',
-                borderRadius: 10,
-                background: 'var(--c-surface-low)',
-                color: 'var(--c-text-primary)',
-                border: '1px solid var(--c-border)',
-                fontSize: 'var(--font-section-label)',
-                fontWeight: 700,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 4,
-              }}
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-                download
-              </span>
-              GitHub
-            </button>
-          </SettingRow>
-        </SettingSection>
-      )}
     </div>
   );
 }
@@ -558,8 +255,7 @@ export function HubSettings({
   const [langQuery, setLangQuery] = useState('');
   const t = useT();
   const lang = settings.language ?? 'en';
-      const isWebDesktop = useIsWebDesktop();
-  const updater = useAppUpdate();
+  const isWebDesktop = useIsWebDesktop();
 
   const [syncStatus, setSyncStatus] = useState<SyncStatus>({
     signedIn: false,
@@ -769,11 +465,6 @@ export function HubSettings({
           t.hub.studioSettings.applicationLabel || (lang === 'es' ? 'Aplicación' : 'Application'),
         items: [
           {
-            id: 'updater' as const,
-            icon: 'system_update',
-            label: lang === 'es' ? 'Actualizador' : 'Updater',
-          },
-          {
             id: 'about' as const,
             icon: 'info',
             label: lang === 'es' ? 'Acerca de' : 'About',
@@ -796,8 +487,6 @@ export function HubSettings({
   }, [t, settings.developerMode, lang, tab]);
 
   const getPageTitle = (id: SettingsPageId | 'profile') => {
-    if (id === 'changelog') return lang === 'es' ? 'Historial de Cambios' : 'Changelog';
-    if (id === 'updater') return lang === 'es' ? 'Actualizador' : 'Updater';
     if (id === 'help-center') return t.hub.studioSettings.helpTitle || 'Help Center';
     if (id === 'faq') return (t.hub as any).studioSettings?.helpTitle || 'FAQ & Support';
     if (id === 'terms') return t.hub.studioSettings.termsTitle || 'Terms of Service';
@@ -843,7 +532,6 @@ export function HubSettings({
     theme: 'dark',
     amoledMode: false,
   };
-  const [changelogOpen, setChangelogOpen] = useState(false);
 
   function requestChange(patch: Partial<PerAppVisuals>) {
     const globalPatch: Record<string, any> = {};
@@ -920,9 +608,7 @@ export function HubSettings({
   useEffect(() => {
     if (
       page !== 'developer' &&
-      page !== 'debug' &&
-      page !== 'download-apps' &&
-      page !== 'release-notes'
+      page !== 'debug'
     )
       return;
 
@@ -1124,126 +810,15 @@ export function HubSettings({
     }
   };
 
-  const handleTestOtaDetection = async () => {
-    try {
-      const mockVer = '3.3.1';
-      const mockRemote = {
-        version: mockVer,
-        updateType: 'updater',
-        downloadUrl: 'https://example.com/mock-updater.zip',
-        changelog: 'Simulated Updater Update Changelog for v3.3.1. Adds sleek developer features.',
-        releaseNotes: ['Simulated Updater item 1', 'Simulated Updater item 2'],
-      };
-      sessionStorage.setItem('studio:mockOtaResponse', JSON.stringify(mockRemote));
-
-      const dismissed = localStorage.getItem('studio:dismissedVersions');
-      if (dismissed) {
-        try {
-          const list = JSON.parse(dismissed);
-          localStorage.setItem(
-            'studio:dismissedVersions',
-            JSON.stringify(list.filter((v: string) => v !== mockVer))
-          );
-        } catch {}
-      }
-      showDevToast('Manual update check initiated...');
-      await checkForUpdate(true, 'settings_manual', 'manual update check');
-    } catch (err: any) {
-      showDevToast(`Check failed: ${err.message || String(err)}`);
-    }
-  };
-
-  const handleTestApkDetection = async () => {
-    try {
-      const mockVer = '3.3.2';
-      const mockRemote = {
-        version: mockVer,
-        updateType: 'apk',
-        apkUrl: 'https://example.com/mock-apk.apk',
-        changelog: 'Simulated APK System Update for v3.3.2. Includes Android-specific fixes.',
-        apkSha256: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
-        releaseNotes: ['Simulated APK item 1', 'Simulated APK item 2'],
-      };
-      sessionStorage.setItem('studio:mockOtaResponse', JSON.stringify(mockRemote));
-
-      const dismissed = localStorage.getItem('studio:dismissedVersions');
-      if (dismissed) {
-        try {
-          const list = JSON.parse(dismissed);
-          localStorage.setItem(
-            'studio:dismissedVersions',
-            JSON.stringify(list.filter((v: string) => v !== mockVer))
-          );
-        } catch {}
-      }
-      sessionStorage.removeItem('studio:laterUpdateVersion');
-
-      showDevToast('APK simulation configured. Checking update...');
-      await checkForUpdate(true, 'settings_manual', 'dev test check');
-    } catch (err: any) {
-      showDevToast(`Simulate failed: ${err.message || String(err)}`);
-    }
-  };
-
   const getDiagnosticsText = () => {
-    const isNativePlat = Capacitor.isNativePlatform();
-    const wrapperVersion = updateDebugLogs.nativeApkVersion || 'Unknown';
-    const hasMismatch =
-      isNativePlat &&
-      wrapperVersion !== 'Unknown' &&
-      wrapperVersion !== 'N/A' &&
-      APP_VERSION !== wrapperVersion;
-
     return [
-      '=== STUDIO DIAGNOSTICS REPORT ===',
+      '=== LIVE STUDIO DIAGNOSTICS REPORT ===',
       `Timestamp: ${new Date().toISOString()}`,
       `App Version: ${APP_VERSION}`,
       `Device Model: ${Capacitor.isNativePlatform() ? 'Native Device' : 'Web Browser'}`,
-      ...(hasMismatch
-        ? [
-            '',
-            'VERSION_MISMATCH_DETECTED',
-            `App Version (${APP_VERSION}) does not match APK Wrapper Version (${wrapperVersion})`,
-            '',
-          ]
-        : []),
-      '',
-      '=== APK UPDATE DIAGNOSTICS ===',
-      `App Version: ${APP_VERSION}`,
+      `Distribution: Google Play Store`,
       `APK Version: ${devNativeVersion}`,
       `versionCode: ${devVersionCode}`,
-      `Update System: APK only`,
-      `Updater System: disabled`,
-      `AppInstaller Available: ${updateDebugLogs.appInstallerAvailable}`,
-      `downloadApk Available: ${updateDebugLogs.downloadApkAvailable}`,
-      `verifyApkSha256 Available: ${updateDebugLogs.verifyApkSha256Available}`,
-      `installApk Available: ${updateDebugLogs.installApkAvailable}`,
-      `openInstallPermissionSettings Available: ${updateDebugLogs.openInstallPermissionSettingsAvailable}`,
-      `Registered Capacitor Plugins: ${updateDebugLogs.registeredPlugins}`,
-      `Plugin Method Check: ${updateDebugLogs.pluginMethodCheck}`,
-      `Fetched version.json: ${updateDebugLogs.fetchedVersionJson}`,
-      `Fetched app-release.json: ${updateDebugLogs.fetchedAppReleaseJson}`,
-      `Update Type: ${updateDebugLogs.updateType}`,
-      `Download Status: ${updateDebugLogs.downloadStatus}`,
-      `SHA Verification: ${updateDebugLogs.shaVerification}`,
-      `File Details: ${updateDebugLogs.fileDetails}`,
-      `Install Error / Log: ${updateDebugLogs.installError}`,
-      `Installer Launch Status: ${updateDebugLogs.installerLaunchStatus}`,
-      `Last Exception Stack Trace: ${updateDebugLogs.lastExceptionStackTrace}`,
-      '',
-      '=== APK INSTALL DETAILS ===',
-      `Exception Message: ${updateDiagnostics.exceptionMessage}`,
-      `Failure Reason: ${updateDiagnostics.failureReason}`,
-      `Download URL: ${updateDiagnostics.downloadUrl}`,
-      `APK Path: ${updateDiagnostics.apkPath}`,
-      `File Size: ${updateDiagnostics.fileSize}`,
-      `SHA Expected: ${updateDiagnostics.shaExpected}`,
-      `SHA Calculated: ${updateDiagnostics.shaCalculated}`,
-      `Installer Result: ${updateDiagnostics.installerResult}`,
-      `Permission State: ${updateDiagnostics.permissionState}`,
-      `Android Version: ${updateDiagnostics.androidVersion}`,
-      `Device Model: ${updateDiagnostics.deviceModel}`,
-      `Diagnostics Timestamp: ${updateDiagnostics.timestamp}`,
     ].join('\n');
   };
 
@@ -1645,16 +1220,6 @@ export function HubSettings({
     switch (activePageId as any) {
       case 'general':
         return <GeneralContent {...pageProps} />;
-      case 'updater':
-        return (
-          <UpdaterSettingsContent
-            lang={lang}
-            updater={updater}
-            accent={accent}
-            showDevToast={showDevToast}
-            navigate={navigate}
-          />
-        );
       case 'appearance':
         console.log(
           '[APPEARANCE-RUNTIME-PROOF] StudioHub renderActivePageContent rendering StudioHubSettingsPanel for page: appearance'
@@ -1669,10 +1234,6 @@ export function HubSettings({
         return <LicensesContent {...pageProps} />;
       case 'profile':
         return <Profile {...pageProps} />;
-      case 'release-notes':
-        return <ReleaseNotesContent {...pageProps} />;
-      case 'changelog':
-        return <ChangelogContent {...pageProps} />;
       case 'help-center':
         return <HelpCenterContent {...pageProps} />;
       case 'faq':
@@ -1692,15 +1253,12 @@ export function HubSettings({
   if (!isWebDesktop) {
     const standardScrollPages: SettingsPageId[] = [
       'general',
-      'updater',
-      'changelog',
       'appearance',
       'language',
       'privacy',
       'about',
       'debug',
       'profile',
-      'release-notes',
       'help-center',
       'faq',
       'terms',
@@ -1715,15 +1273,12 @@ export function HubSettings({
           viewOrder={[
             'main',
             'general',
-            'updater',
-            'changelog',
             'appearance',
             'language',
             'privacy',
             'about',
             'debug',
             'profile',
-            'release-notes',
             'help-center',
             'faq',
             'terms',
@@ -1813,124 +1368,6 @@ export function HubSettings({
                         paddingRight: 'var(--page-inset-h)',
                       }}
                     >
-
-                      {/* Minimal Update Card */}
-                      {updater.updateAvailable && (
-                        <motion.div
-                          initial={{ opacity: 0, y: -10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          style={{
-                            background: `linear-gradient(135deg, ${accent.from}18, ${accent.to}10)`,
-                            border: `1px solid ${accent.from}35`,
-                            borderRadius: 20,
-                            padding: 16,
-                            marginBottom: 20,
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: 12,
-                            boxShadow: `0 6px 24px ${accent.from}14, inset 0 1px 1px rgba(255, 255, 255, 0.20)`,
-                            backdropFilter: 'var(--surface-float-blur)',
-                            WebkitBackdropFilter: 'var(--surface-float-blur)',
-                          }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                            <div
-                              style={{
-                                width: 40,
-                                height: 40,
-                                borderRadius: 12,
-                                background: `${accent.from}22`,
-                                border: `1px solid ${accent.from}40`,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                color: accent.from,
-                              }}
-                            >
-                              <span
-                                className="material-symbols-outlined"
-                                style={{ fontSize: 22, lineHeight: 1 }}
-                              >
-                                system_update
-                              </span>
-                            </div>
-                            <div style={{ flex: 1 }}>
-                              <p
-                                style={{
-                                  margin: 0,
-                                  fontSize: 15,
-                                  fontWeight: 800,
-                                  color: 'var(--c-text-primary)',
-                                  fontFamily: 'var(--studio-font-display)',
-                                  letterSpacing: '-0.02em',
-                                }}
-                              >
-                                {lang === 'es' ? 'Actualización disponible' : 'Update available'}
-                              </p>
-                              <p
-                                style={{
-                                  margin: 0,
-                                  fontSize: 12,
-                                  color: 'var(--c-text-secondary)',
-                                  opacity: 0.8,
-                                  fontFamily: 'Inter, sans-serif',
-                                }}
-                              >
-                                {lang === 'es' ? 'Versión ' : 'Version '}
-                                {updater.remoteVersion}
-                              </p>
-                            </div>
-                          </div>
-                          <div style={{ display: 'flex', gap: 8 }}>
-                            <motion.button
-                              whileTap={{ scale: 0.96 }}
-                              onClick={() => navigate('updater')}
-                              style={{
-                                flex: 1,
-                                padding: '10px 16px',
-                                borderRadius: 12,
-                                background: `linear-gradient(135deg, ${accent.from}, ${accent.to})`,
-                                color: '#ffffff',
-                                border: 'none',
-                                fontSize: 13,
-                                fontWeight: 750,
-                                fontFamily: 'Inter, sans-serif',
-                                cursor: 'pointer',
-                                boxShadow: `0 4px 14px ${accent.from}35`,
-                              }}
-                            >
-                              {lang === 'es' ? 'Actualizar' : 'Update'}
-                            </motion.button>
-                            <motion.button
-                              whileTap={{ scale: 0.96 }}
-                              onClick={() => {
-                                updater.dismissUpdate();
-                              }}
-                              style={{
-                                padding: '10px 16px',
-                                borderRadius: 12,
-                                background: isLight
-                                  ? 'rgba(0, 0, 0, 0.05)'
-                                  : isAmoled
-                                    ? '#000000'
-                                    : 'rgba(255, 255, 255, 0.06)',
-                                border: isLight
-                                  ? '1px solid rgba(0, 0, 0, 0.08)'
-                                  : isAmoled
-                                    ? '1px solid rgba(255, 255, 255, 0.12)'
-                                    : '1px solid rgba(255, 255, 255, 0.10)',
-                                color: 'var(--c-text-secondary)',
-                                fontSize: 13,
-                                fontWeight: 650,
-                                fontFamily: 'Inter, sans-serif',
-                                cursor: 'pointer',
-                              }}
-                            >
-                              {lang === 'es' ? 'Descartar' : 'Dismiss'}
-                            </motion.button>
-                          </div>
-                        </motion.div>
-                      )}
 
                       {/* Preferences Group */}
                       <div style={{ marginBottom: 'clamp(16px, 2.4vh, 22px)' }}>
@@ -2166,96 +1603,6 @@ export function HubSettings({
                           }}
                           className="w-full"
                         >
-                          {/* Updater Card */}
-                          <button
-                            type="button"
-                            onClick={() => navigate('updater')}
-                            className="w-full active:scale-[0.975] md:hover:scale-[1.015] md:hover:-translate-y-[1px] transition-transform duration-300 sc-module-card group"
-                            style={settingCardStyle}
-                          >
-                            <div
-                              style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 'clamp(12px, 3.2vw, 16px)',
-                                minWidth: 0,
-                              }}
-                            >
-                              <div style={settingIconContainerStyle}>
-                                <span
-                                  className="material-symbols-outlined"
-                                  style={{ color: isLight ? '#000000' : '#FFFFFF', fontSize: 20 }}
-                                >
-                                  system_update
-                                </span>
-                              </div>
-                              <div
-                                style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}
-                              >
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                  <span
-                                    style={{
-                                      fontSize: 'clamp(15.5px, 1.95vh, 17px)',
-                                      fontWeight: 800,
-                                      color: 'var(--c-text-primary)',
-                                      fontFamily: 'var(--studio-font-display)',
-                                      letterSpacing: '-0.02em',
-                                    }}
-                                  >
-                                    {lang === 'es' ? 'Actualizador' : 'Updater'}
-                                  </span>
-                                  {updater.updateAvailable && (
-                                    <span
-                                      style={{
-                                        width: 7,
-                                        height: 7,
-                                        borderRadius: '50%',
-                                        background: '#ef4444',
-                                        display: 'inline-block',
-                                        boxShadow: '0 0 6px #ef4444',
-                                      }}
-                                    />
-                                  )}
-                                </div>
-                                <span
-                                  style={{
-                                    fontSize: 'clamp(12px, 1.45vh, 13px)',
-                                    color: 'var(--c-text-secondary)',
-                                    fontFamily: 'Inter, sans-serif',
-                                    fontWeight: 500,
-                                    marginTop: '3px',
-                                    lineHeight: 1.35,
-                                    opacity: 0.85,
-                                    whiteSpace: 'nowrap',
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                  }}
-                                >
-                                  {getUpdaterStatusText(updater, lang)}
-                                </span>
-                              </div>
-                            </div>
-                            <div
-                              style={{
-                                width: 24,
-                                height: 24,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                flexShrink: 0,
-                                marginLeft: 8,
-                              }}
-                            >
-                              <StudioIcon
-                                name="chevron_right"
-                                size={20}
-                                style={{
-                                  color: isLight ? '#000000' : '#FFFFFF',
-                                  opacity: 0.5,
-                                }}
-                              />
-                            </div>
-                          </button>
 
                           {/* About Card */}
                           <button
@@ -2621,17 +1968,6 @@ export function HubSettings({
                       <span className="truncate" style={{ flex: 1 }}>
                         {item.label}
                       </span>
-                      {item.id === 'updater' && updater.updateAvailable && (
-                        <span
-                          style={{
-                            width: 6,
-                            height: 6,
-                            borderRadius: '50%',
-                            background: '#ef4444',
-                            marginRight: 4,
-                          }}
-                        />
-                      )}
                     </button>
                   );
                 })}
@@ -2689,7 +2025,6 @@ export function HubSettings({
           </div>
         </div>
 
-        <ChangelogSheet open={changelogOpen} onClose={() => setChangelogOpen(false)} />
         {renderToastElement()}
       </div>
     </div>,

@@ -97,22 +97,8 @@ if (import.meta.env.DEV) {
 
 
 
-const UpdateIndicator = lazy(
-  () => import('@workspace/ui-shared/src/features/updater/components/UpdateIndicator')
-);
-
 function GlobalOverlays() {
-  const [ready, setReady] = useState(false);
-  useEffect(() => {
-    const id = requestAnimationFrame(() => setReady(true));
-    return () => cancelAnimationFrame(id);
-  }, []);
-  if (!ready) return null;
-  return (
-    <Suspense fallback={null}>
-      <UpdateIndicator />
-    </Suspense>
-  );
+  return null;
 }
 
 function RootAppContainer() {

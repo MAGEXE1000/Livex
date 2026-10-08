@@ -26,34 +26,13 @@ import {
   APP_VERSION,
   getStagexDiagnostics,
   resetStagexDiagnostics,
-  updateDiagnostics,
-  updateDebugLogs,
   getStageIframe,
   getNavigationEntries,
   clearNavigationEntries,
   NavigationEntry,
-  triggerSimulatedStatus,
-  addJsLog,
-  jsLogs,
-  nativeLogs,
-  stateTimeline,
-  activityLifecycleTimeline,
-  recordActivityLifecycle,
-  simulateStatusCallback,
-  globalUpdateState,
-  resetAppUpdateState,
-  resetUpdateDiagnostics,
-  getTimelineReport,
-  checkForUpdate,
-  downloadUpdate,
-  applyUpdate,
-  deleteLocalApk,
-  transitionHistory,
-  rejectedTransitions,
   AppInstaller,
   APP_VERSION_LABEL,
   NATIVE_VERSION,
-  transitionToState,
   useIsWebDesktop,
   useNavigationStore,
   useScrollHide,
@@ -72,7 +51,6 @@ import {
   SettingsScaffold,
   SettingsContentContainer,
 } from '../../../shared/layout/StudioLayoutSystem';
-import UpdaterDiagnosticsPage from '../../updater/diagnostics/UpdaterDiagnosticsPage';
 import { SharedNavigationContainer } from '../../../navigation/SharedNavigationContainer';
 import { DeveloperInspectorPanel } from '../inspector/DeveloperInspectorPanel';
 import { Toggle as StudioToggle } from '../../../shared/design-system/StudioToggle';
@@ -620,8 +598,6 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
         return 'Developer Options';
       case 'stagex':
         return 'Stagex';
-      case 'updater_diagnostics':
-        return 'Updater';
       case 'system':
         return 'System';
       case 'logs':
@@ -683,7 +659,6 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
   const [versionUpdates, setVersionUpdates] = useState(0);
 
   const [expandedLogIndices, setExpandedLogIndices] = useState<Record<number, boolean>>({});
-  const [updaterTabMode, setUpdaterTabMode] = useState<'laboratory' | 'diagnostics'>('laboratory');
 
   const [diagExceptionCollapsed, setDiagExceptionCollapsed] = useState(true);
   const [stateHistoryCollapsed, setStateHistoryCollapsed] = useState(true);
@@ -930,7 +905,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
     return 'Initializing';
   }, [stagex]);
 
-  const otaStatus = updateDebugLogs.updateDecision || 'Idle';
+  const otaStatus = 'Up to date';
 
   useEffect(() => {
     if (currentApp !== 'hub' && currentApp !== lastAppRef.current) {
@@ -1116,14 +1091,6 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
       });
     });
 
-    stateTimeline.forEach((t) => {
-      list.push({
-        time: t.timestamp,
-        type: 'state',
-        text: `State Transition: ${t.state}`,
-        details: `Reason: ${t.reason}`,
-      });
-    });
     list.sort((a, b) => a.time - b.time);
     return list;
   };
@@ -1187,14 +1154,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
     return list;
   }, [unifiedTimeline, logFilterMode, logSearchQuery]);
 
-  // Obsolete diagnostics methods removed
   // Collapsible views state
-  const [updaterCollapsed, setUpdaterCollapsed] = useState({
-    device: false,
-    decision: false,
-    updater: false,
-    errors: false,
-  });
 
   const [stagexCollapsed, setStagexCollapsed] = useState({
     connection: false,
@@ -1205,10 +1165,6 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
   });
 
 
-  // Render Inline Updater Diagnostics & Laboratory View
-  const renderUpdaterView = () => {
-    return null;
-  };
   const renderStagexView = () => {
     return (
       <SettingsContentContainer
@@ -1685,10 +1641,6 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
         dump.stagexDiagnostics = stagex;
         dump.selfTestResults = selfTestResults;
         break;
-      case 'Updater':
-        dump.updateDiagnostics = updateDiagnostics;
-        dump.updateDebugLogs = updateDebugLogs;
-        break;
       case 'System':
         dump.device = {
           userAgent: navigator.userAgent,
@@ -1696,10 +1648,9 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
           isNative: Capacitor.isNativePlatform(),
           androidVersion:
             nativeDeviceInfo?.androidVersion ||
-            updateDiagnostics.androidVersion ||
             parsedUA.androidVer,
           apiLevel: nativeDeviceInfo?.apiLevel || 'Unavailable',
-          deviceModel: nativeDeviceInfo?.model || updateDiagnostics.deviceModel || 'Unavailable',
+          deviceModel: nativeDeviceInfo?.model || 'Unavailable',
           appVersion: APP_VERSION,
           webviewEngine: parsedUA.webviewVer,
           display: {
@@ -2152,28 +2103,24 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
         ? 'Apps'
         : title === 'Stagex' || title === 'Stagex Diagnostics'
           ? 'Stagex'
-          : title === 'Updater' || title === 'Updater Diagnostics'
-            ? 'Updater'
-            : title === 'System' || title === 'System Diagnostics'
-              ? 'System'
-              : title === 'Logs'
-                ? 'Logs'
-                : title === 'Performance' || title === 'Performance Diagnostics'
-                  ? 'Performance'
-                  : title === 'Inspector' || title === 'Developer Inspector'
-                    ? 'Inspector'
-                    : title === 'Network Sniffer'
-                      ? 'Network'
-                      : '';
+          : title === 'System' || title === 'System Diagnostics'
+            ? 'System'
+            : title === 'Logs'
+              ? 'Logs'
+              : title === 'Performance' || title === 'Performance Diagnostics'
+                ? 'Performance'
+                : title === 'Inspector' || title === 'Developer Inspector'
+                  ? 'Inspector'
+                  : title === 'Network Sniffer'
+                    ? 'Network'
+                    : '';
 
     const desc =
       title === 'Apps' || title === 'Apps Diagnostics'
         ? 'Module Performance & Lifecycle'
         : title === 'Stagex' || title === 'Stagex Diagnostics'
           ? 'Stagex Telemetry & Testing'
-          : title === 'Updater' || title === 'Updater Diagnostics'
-            ? 'Updater Updates & Diagnostics'
-            : title === 'System' || title === 'System Diagnostics'
+          : title === 'System' || title === 'System Diagnostics'
               ? 'App Store & Module State'
               : title === 'Logs'
                 ? 'Runtime Events & Warnings'
@@ -6441,7 +6388,7 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
               </span>
             </div>
             <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--c-text-primary)' }}>
-              {updateDiagnostics.androidVersion || '14.0'}
+              {nativeDeviceInfo?.androidVersion || '14.0'}
             </div>
           </div>
 
@@ -7009,77 +6956,6 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
               </div>
             </button>
 
-            {/* Updater */}
-            <button
-              onClick={() => setSubView('updater_diagnostics')}
-              className="btn-smooth"
-              style={cardContainerStyle('updater_diagnostics')}
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'start',
-                  justifyContent: 'space-between',
-                  width: '100%',
-                }}
-              >
-                <div style={{ display: 'flex', gap: 16, textAlign: 'left' }}>
-                  <span
-                    className="material-symbols-outlined"
-                    style={{
-                      fontSize: 32,
-                      color: 'var(--studio-accent-from, #ffffff)',
-                      fontVariationSettings: "'FILL' 0",
-                    }}
-                  >
-                    system_update
-                  </span>
-                  <div>
-                    <h3
-                      style={{
-                        fontSize: 16,
-                        fontWeight: 800,
-                        color: 'var(--c-text-primary)',
-                        margin: '0 0 4px',
-                      }}
-                    >
-                      Updater
-                    </h3>
-                    <p
-                      style={{
-                        fontSize: 12,
-                        color: 'var(--c-text-secondary)',
-                        margin: 0,
-                        lineHeight: 1.3,
-                      }}
-                    >
-                      Inspect update and native APK diagnostics.
-                    </p>
-                  </div>
-                </div>
-                <span style={badgeStyle('stable')}>Stable</span>
-              </div>
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  width: '100%',
-                  marginTop: 16,
-                }}
-              >
-                <span style={{ fontSize: 10, color: 'var(--c-text-secondary)' }}>
-                  Updater system initialized
-                </span>
-                <span
-                  className="material-symbols-outlined"
-                  style={{ color: 'var(--c-text-secondary)', opacity: 0.5 }}
-                >
-                  arrow_forward
-                </span>
-              </div>
-            </button>
-
             {/* Developer Inspector */}
             <button
               onClick={() => setSubView('developer_inspector')}
@@ -7362,7 +7238,6 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
             'dashboard',
             'developer_inspector',
             'stagex',
-            'updater_diagnostics',
             'system',
             'logs',
             'performance',
@@ -7420,26 +7295,6 @@ export default function DevToolsDashboard({ accent, onBack, hideHeader }: Props)
                   toolbarActions={renderCopyButton('Stagex')}
                 >
                   {renderStagexView()}
-                </SettingsScaffold>
-              )}
-
-              {viewId === 'updater_diagnostics' && (
-                <SettingsScaffold
-                  title="Updater"
-                  onBack={handleSubViewBack}
-                  toolbarActions={renderCopyButton('Updater')}
-                >
-                  <SettingsContentContainer
-                    style={{
-                      flex: 1,
-                      overflowY: 'auto',
-                      paddingTop: 16,
-                      paddingBottom:
-                        'calc(env(safe-area-inset-bottom, 0px) + var(--content-bottom-pad, 96px) + 20px)',
-                    }}
-                  >
-                    <UpdaterDiagnosticsPage hideHeader={true} />
-                  </SettingsContentContainer>
                 </SettingsScaffold>
               )}
 

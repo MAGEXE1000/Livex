@@ -1,7 +1,6 @@
 import { registerPlugin } from '@capacitor/core';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { parseAndNormalizeVersion, PRODUCTION_SIGNING_SHA256 } from '../startup/appVersion';
-import { logRawSource, releaseMetadataInspector } from '../updater/versionLogger';
 
 // CRITICAL WARNING:
 // This interface, the registered plugin name 'AppInstaller', and its methods:
@@ -180,7 +179,6 @@ export async function resolveApkUrl(targetVersion?: string): Promise<string> {
     const res = await fetch('https://api.github.com/repos/MAGEXE1000/Livex/releases');
     if (!res.ok) return fallbackUrl;
     const text = await res.text();
-    logRawSource('github-releases', text);
 
     let releases: GitHubRelease[];
     try {
@@ -189,12 +187,6 @@ export async function resolveApkUrl(targetVersion?: string): Promise<string> {
       return fallbackUrl;
     }
     if (!Array.isArray(releases) || releases.length === 0) return fallbackUrl;
-
-    // Log the first/latest release fields as raw tag/name
-    if (releases[0]) {
-      releaseMetadataInspector.rawTag = releases[0].tag_name || null;
-      releaseMetadataInspector.rawReleaseName = (releases[0] as any).name || null;
-    }
 
     const cleanVer = parseAndNormalizeVersion(targetVersion);
 
@@ -238,7 +230,6 @@ export async function resolveReleasePageUrl(targetVersion?: string): Promise<str
     const res = await fetch('https://api.github.com/repos/MAGEXE1000/Livex/releases');
     if (!res.ok) return defaultFallback;
     const text = await res.text();
-    logRawSource('github-releases', text);
 
     let releases: GitHubRelease[];
     try {
@@ -247,11 +238,6 @@ export async function resolveReleasePageUrl(targetVersion?: string): Promise<str
       return defaultFallback;
     }
     if (!Array.isArray(releases) || releases.length === 0) return defaultFallback;
-
-    if (releases[0]) {
-      releaseMetadataInspector.rawTag = releases[0].tag_name || null;
-      releaseMetadataInspector.rawReleaseName = (releases[0] as any).name || null;
-    }
 
     const cleanVer = parseAndNormalizeVersion(targetVersion);
 
@@ -454,10 +440,6 @@ export async function verifyApkSha256(filePath: string, expectedHash: string): P
 
   try {
     const res = await AppInstaller.verifySha256({ filePath, expectedHash: cleanExpected });
-    try {
-      const { updateDebugLogs } = await import('../updater/debugLogs');
-      updateDebugLogs.downloadedApkSha256 = res.computedHash;
-    } catch {}
     await AppInstaller.appendLog({
       stage: '[INSTRUMENTATION] verifyApkSha256 EXIT',
       message: `matches=${res.matches}, computedHash=${res.computedHash}`,
@@ -468,13 +450,6 @@ export async function verifyApkSha256(filePath: string, expectedHash: string): P
       '[apkDownloader] Native verifySha256 failed, falling back to JS implementation:',
       err
     );
-    // Write error to updateDebugLogs if possible
-    try {
-      const { updateDebugLogs } = await import('../updater/debugLogs');
-      const errMsg = err instanceof Error ? err.message : String(err);
-      updateDebugLogs.installError = `Native verifySha256 failed: ${errMsg}`;
-      updateDebugLogs.downloadedApkSha256 = `ERROR: Native verifySha256 failed - ${errMsg}`;
-    } catch {}
 
     // JS Fallback (memory heavy, OOM risk for large files)
     try {
@@ -484,10 +459,6 @@ export async function verifyApkSha256(filePath: string, expectedHash: string): P
 
       const base64Data = typeof result.data === 'string' ? result.data : '';
       if (!base64Data) {
-        try {
-          const { updateDebugLogs } = await import('../updater/debugLogs');
-          updateDebugLogs.downloadedApkSha256 = 'ERROR: Empty file read';
-        } catch {}
         return false;
       }
 
@@ -501,21 +472,10 @@ export async function verifyApkSha256(filePath: string, expectedHash: string): P
       const hashArray = Array.from(new Uint8Array(hashBuffer));
       const hashHex = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
 
-      try {
-        const { updateDebugLogs } = await import('../updater/debugLogs');
-        updateDebugLogs.downloadedApkSha256 = hashHex;
-      } catch {}
-
       const matches = hashHex.toLowerCase() === cleanExpected;
       return matches;
     } catch (jsErr) {
       console.error('[apkDownloader] JS Fallback verification failed:', jsErr);
-      try {
-        const { updateDebugLogs } = await import('../updater/debugLogs');
-        const errMsg = jsErr instanceof Error ? jsErr.message : String(jsErr);
-        updateDebugLogs.installError += `\nJS Fallback failed: ${errMsg}`;
-        updateDebugLogs.downloadedApkSha256 = `ERROR: JS Fallback failed - ${errMsg}`;
-      } catch {}
       return false;
     }
   }

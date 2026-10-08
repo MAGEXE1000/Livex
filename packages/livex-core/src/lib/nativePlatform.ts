@@ -1,8 +1,7 @@
 import { Capacitor } from '@capacitor/core';
 
 export const isNative = () => Capacitor.isNativePlatform();
-export const shouldUseAndroidApkUpdater = () =>
-  Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android';
+export const shouldUseAndroidApkUpdater = () => false;
 
 export const lockOrientation = async (orientation: 'portrait' | 'landscape'): Promise<void> => {
   try {

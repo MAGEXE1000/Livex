@@ -44,13 +44,13 @@ export function sanitizeUTF8String(str: string | null | undefined): string {
     .replace(/Ã±/g, 'ñ');
 }
 
-import React from 'react';
+import * as React from 'react';
 import { Capacitor } from '@capacitor/core';
-import { logVersionTransformation } from '../updater/versionLogger';
+function logVersionTransformation(_action: string, _input: string | null | undefined, _output: string | null) {}
 
-export const NATIVE_VERSION = '4.7.2';
-export const NATIVE_VERSION_CODE = 40702;
-export const WEB_VERSION = '4.7.2';
+export const NATIVE_VERSION = '4.7.3';
+export const NATIVE_VERSION_CODE = 40703;
+export const WEB_VERSION = '4.7.3';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -76,13 +76,13 @@ export const APP_VERSION_DATE = '10/2/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = '876b9367';
+export const APP_COMMIT_SHA = 'c25c33ed';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '10/7/2026, 12:04:00 AM CST';
+export const APP_BUILD_TIMESTAMP = '10/7/2026, 10:17:20 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first

@@ -8,9 +8,6 @@ import {
   useIsWebDesktop,
   useT,
   type AuthUser,
-  APP_VERSION,
-  getChangelogSections,
-  APP_VERSION_DATE,
 } from '@workspace/livex-core';
 import { HubTab, HelpPageId } from './hubConstants';
 import { FAQ_ITEMS, HelpAccordion } from './faqConstants';
@@ -125,7 +122,6 @@ export function HubHelp({
   }
 
   const [copiedBugTemplate, setCopiedBugTemplate] = useState(false);
-  const [firebaseAppReleaseJson, setFirebaseAppReleaseJson] = useState<string>('Loading...');
 
   const pageScrollPositions = useRef<Record<string, number>>({});
   const pendingRestoreRef = useRef<string | null>(null);
@@ -166,26 +162,6 @@ export function HubHelp({
     }
   };
 
-  useEffect(() => {
-    if (page !== 'download-apps') return;
-    const loadManifest = async () => {
-      const t = Date.now();
-      const baseUrl = 'https://studio-30f44.web.app';
-      try {
-        const r2 = await fetch(`${baseUrl}/app-release.json?t=${t}`);
-        if (r2.ok) {
-          const text = await r2.text();
-          setFirebaseAppReleaseJson(text);
-        } else {
-          setFirebaseAppReleaseJson(`Error: HTTP ${r2.status}`);
-        }
-      } catch (e: any) {
-        setFirebaseAppReleaseJson(`Error: ${e.message || String(e)}`);
-      }
-    };
-    loadManifest();
-  }, [page]);
-
   function renderHelpCenterContent() {
     return <HelpAccordion accent={accent} lang={lang} />;
   }
@@ -194,255 +170,6 @@ export function HubHelp({
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <HelpAccordion accent={accent} lang={lang} />
-      </div>
-    );
-  }
-
-  function renderReleaseNotesContent() {
-    const changelogSections = getChangelogSections(lang) || [];
-    return (
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 'var(--space-5)',
-          paddingBottom: 'var(--space-6)',
-        }}
-      >
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'baseline',
-            gap: 12,
-            paddingBottom: 12,
-            borderBottom: '1px solid var(--c-border)',
-          }}
-        >
-          <span style={{ fontSize: 20, fontWeight: 800, color: 'var(--c-text-primary)' }}>
-            v{APP_VERSION}
-          </span>
-          <span style={{ fontSize: 12, color: 'var(--c-text-secondary)' }}>
-            Released on {APP_VERSION_DATE}
-          </span>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
-          {changelogSections.map((sec, i) => (
-            <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <h3
-                style={{
-                  fontSize: 'var(--font-section-label)',
-                  fontWeight: 700,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.08em',
-                  color: 'var(--c-text-secondary)',
-                  opacity: 0.6,
-                  margin: 0,
-                }}
-              >
-                {sec.heading}
-              </h3>
-              <ul
-                style={{
-                  listStyle: 'none',
-                  padding: 0,
-                  margin: 0,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 8,
-                }}
-              >
-                {sec.items.map((item, j) => (
-                  <li
-                    key={j}
-                    style={{
-                      display: 'flex',
-                      gap: 10,
-                      fontSize: 13,
-                      color: 'var(--c-text-secondary)',
-                      lineHeight: 1.5,
-                    }}
-                  >
-                    <span
-                      style={{
-                        width: 4,
-                        height: 4,
-                        borderRadius: '50%',
-                        background: accent.from,
-                        marginTop: 7,
-                        flexShrink: 0,
-                      }}
-                    />
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  function renderDownloadAppsContent() {
-    let apkVersion = '3.6.28';
-    let apkSize = '13.47 MB';
-    let apkUrl = 'https://github.com/MAGEXE1000/Livex/releases/download/v3.6.28/studio-3.6.28.apk';
-
-    try {
-      if (
-        firebaseAppReleaseJson &&
-        !firebaseAppReleaseJson.startsWith('Error') &&
-        firebaseAppReleaseJson !== 'Loading...'
-      ) {
-        const parsed = JSON.parse(firebaseAppReleaseJson);
-        if (parsed.version) apkVersion = parsed.version;
-        if (parsed.apkSizeBytes) apkSize = `${(parsed.apkSizeBytes / (1024 * 1024)).toFixed(2)} MB`;
-        if (parsed.apkUrl) apkUrl = parsed.apkUrl;
-      }
-    } catch (e) {
-      console.warn('Failed to parse firebaseAppReleaseJson:', e);
-    }
-
-    return (
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 'var(--space-5)',
-          paddingBottom: 'var(--space-6)',
-        }}
-      >
-        <div
-          style={{
-            padding: 18,
-            background: 'var(--surface-topbar-bg)',
-            border: '1px solid var(--c-border)',
-            borderRadius: 16,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 14,
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              width: '100%',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <span
-                className="material-symbols-outlined"
-                style={{ fontSize: 30, color: accent.from }}
-              >
-                adb
-              </span>
-              <div>
-                <h3
-                  style={{
-                    margin: 0,
-                    fontSize: 15,
-                    fontWeight: 800,
-                    color: 'var(--c-text-primary)',
-                    fontFamily: 'var(--studio-font-display)',
-                  }}
-                >
-                  Android App (APK)
-                </h3>
-                <span style={{ fontSize: 12, color: 'var(--c-text-secondary)' }}>
-                  v{apkVersion} • {apkSize}
-                </span>
-              </div>
-            </div>
-            <a
-              href={apkUrl}
-              style={{
-                textDecoration: 'none',
-                padding: '7px 14px',
-                background: accent.from,
-                color: '#fff',
-                fontSize: 12.5,
-                fontWeight: 700,
-                borderRadius: 9999,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-              }}
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
-                download
-              </span>
-              {t.help.downloadApps.downloadApk}
-            </a>
-          </div>
-          <div style={{ height: 1, borderTop: '1px solid var(--c-border)' }} />
-          <p style={{ margin: 0, fontSize: 12, color: 'var(--c-text-secondary)', lineHeight: 1.5 }}>
-            {t.help.downloadApps.installApkDesc}
-          </p>
-        </div>
-
-        <div
-          style={{
-            padding: 18,
-            background: 'var(--surface-topbar-bg)',
-            border: '1px solid var(--c-border)',
-            borderRadius: 16,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 14,
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              width: '100%',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <span
-                className="material-symbols-outlined"
-                style={{ fontSize: 30, color: accent.from }}
-              >
-                language
-              </span>
-              <div>
-                <h3
-                  style={{
-                    margin: 0,
-                    fontSize: 15,
-                    fontWeight: 800,
-                    color: 'var(--c-text-primary)',
-                    fontFamily: 'var(--studio-font-display)',
-                  }}
-                >
-                  Web Version (PWA)
-                </h3>
-                <span style={{ fontSize: 12, color: 'var(--c-text-secondary)' }}>
-                  {t.help.downloadApps.pwaVersion}
-                </span>
-              </div>
-            </div>
-            <div
-              style={{
-                fontSize: 'var(--font-section-label)',
-                fontWeight: 700,
-                color: accent.from,
-                background: `${accent.from}22`,
-                padding: '5px 10px',
-                borderRadius: 9999,
-              }}
-            >
-              {t.help.downloadApps.runningNow}
-            </div>
-          </div>
-          <div style={{ height: 1, borderTop: '1px solid var(--c-border)' }} />
-          <p style={{ margin: 0, fontSize: 12, color: 'var(--c-text-secondary)', lineHeight: 1.5 }}>
-            {t.help.downloadApps.installPwaDesc}
-          </p>
-        </div>
       </div>
     );
   }
@@ -652,10 +379,6 @@ export function HubHelp({
         return renderHelpCenterContent();
       case 'faq':
         return renderFaqContent();
-      case 'release-notes':
-        return renderReleaseNotesContent();
-      case 'download-apps':
-        return renderDownloadAppsContent();
       case 'keyboard-shortcuts':
         return renderKeyboardShortcutsContent();
       case 'terms':
@@ -680,20 +403,6 @@ export function HubHelp({
             label:
               t.hub.studioSettings.helpTitle ||
               (lang === 'es' ? 'Ayuda y Soporte' : 'Help & Support'),
-          },
-          {
-            id: 'release-notes' as const,
-            icon: 'article',
-            label:
-              t.hub.studioSettings.releaseTitle ||
-              (lang === 'es' ? 'Notas de Lanzamiento' : 'Release Notes'),
-          },
-          {
-            id: 'download-apps' as const,
-            icon: 'install_desktop',
-            label:
-              t.hub.studioSettings.downloadTitle ||
-              (lang === 'es' ? 'Descargar Aplicaciones' : 'Download Apps'),
           },
           {
             id: 'keyboard-shortcuts' as const,
@@ -744,8 +453,6 @@ export function HubHelp({
     const standardScrollPages: HelpPageActiveId[] = [
       'help-center',
       'faq',
-      'release-notes',
-      'download-apps',
       'keyboard-shortcuts',
       'terms',
       'privacy-policy',
@@ -760,8 +467,6 @@ export function HubHelp({
             'main',
             'help-center',
             'faq',
-            'release-notes',
-            'download-apps',
             'keyboard-shortcuts',
             'terms',
             'privacy-policy',

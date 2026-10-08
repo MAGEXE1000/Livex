@@ -38,7 +38,6 @@ import {
   SUPPORTED_LANGUAGES,
 } from '../../../../shared/settings/LanguagePickerSheet';
 import { ThemeToggle } from '../../../../components/motion/theme-toggle';
-import ChangelogSheet from '../../../chordex/components/ChangelogSheet';
 import StudioHubSettingsPanel from '.././StudioHubSettingsPanel';
 import {
   ChordexLogo,
@@ -78,24 +77,11 @@ import {
   useScrollHide,
   setNavHidden,
   useT,
-  useAppUpdate,
   APP_VERSION_LABEL,
   APP_VERSION_TAG,
   APP_VERSION_DATE,
   compareSemver,
   APP_VERSION,
-  getChangelogSections,
-  RELEASE_HISTORY,
-  updateDebugLogs,
-  updateDiagnostics,
-  checkForUpdate,
-  resetAppUpdateState,
-  isAppInstallerAvailable,
-  applyUpdate,
-  fadeToBlackAndReload,
-  resolveApkUrl,
-  downloadAndInstallApk,
-  resolveReleasePageUrl,
   useIsWebDesktop,
   useStudioPreferences,
   registerDebugProvider,
@@ -113,11 +99,7 @@ import {
   EasingPresets,
   SpringPresets,
   authRepository,
-  getUpdateHistory,
   StartupCoordinator,
-  startDiagnosticsSession,
-  resetUpdateTimeline,
-  getTimelineReport,
   settingsController,
   getUserCover,
   subscribeUserCover,
@@ -134,7 +116,6 @@ import {
   getSessionIndex,
 } from '../../components/hubConstants';
 import { HelpAccordion } from '../../components/faqConstants';
-import { ChangelogView } from '../../components/HubChangelogView';
 
 export type SettingsPageId =
   | 'main'
@@ -143,15 +124,12 @@ export type SettingsPageId =
   | 'language'
   | 'privacy'
   | 'about'
-  | 'updater'
   | 'notifications'
   | 'debug'
   | 'developer'
   | 'profile'
   | 'help-center'
   | 'faq'
-  | 'release-notes'
-  | 'download-apps'
   | 'keyboard-shortcuts'
   | 'terms'
   | 'privacy-policy'
@@ -161,8 +139,7 @@ export type SettingsPageId =
   | 'subscription'
   | 'devices-sessions'
   | 'privacy-data'
-  | 'licenses'
-  | 'changelog';
+  | 'licenses';
 
 const syncController = {
   syncNow: () => {},
@@ -198,7 +175,6 @@ export function PrivacyContent(props: any) {
   const t = useT();
   const tr = t as any;
   const isWebDesktop = useIsWebDesktop();
-  const updater = useAppUpdate();
   return (
       <SettingsContentContainer style={{ paddingBottom: 'var(--space-6)' }}>
         <SettingsSectionLabel>

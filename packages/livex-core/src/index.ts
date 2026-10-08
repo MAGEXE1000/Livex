@@ -63,12 +63,6 @@ export * from './data/authorizedChords';
 export * from './lib/chordService';
 export * from './lib/chord/chordResolution';
 export * from './lib/bundle/livexBundleService';
-export * from './lib/updater/diagnostics';
-export { deleteLocalApk } from './lib/updater/cacheManager';
-export * from './lib/updater/versionLogger';
-export * from './lib/updater/stateMachine';
-export * from './lib/updater/flightRecorder';
-export * from './lib/updater/updaterSimulation';
 export * from './lib/startupCoordinator';
 export * from './lib/themeEngine';
 export * from './lib/preferences/accentUtils';
@@ -91,14 +85,6 @@ export * from './lib/navigation/validation';
 export * from './lib/navigation/useBackHandler';
 export * from './lib/navigation/navigationMotion';
 
-export * from './hooks/useAppUpdate';
-
-export * from './lib/updater/pipeline';
-export * from './lib/updater/installActions';
-export * from './lib/updater/recovery';
-export * from './lib/updater/releaseMetadata';
-
-export * from './lib/updater/updateHistory';
 export * from './lib/nativePlatform';
 export * from './lib/utilities/visualEffects';
 export * from './lib/navigation/searchIndex';

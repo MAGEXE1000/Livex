@@ -16,7 +16,6 @@ export {
   triggerIntroReveal,
   subscribeIntroDone,
 } from './shared/animation/introSignal';
-export { default as LivexUpdateAuroraBackground, default as StudioUpdateAuroraBackground } from './features/updater/components/LivexUpdateAuroraBackground';
 export { ErrorBoundary } from './shared/feedback/ErrorBoundary';
 export { RootAppCrashReportUI } from './shared/feedback/RootAppCrashReportUI';
 export * from './features/chordex/icons/ChordexLogo';
@@ -38,7 +37,6 @@ export { SaxophoneView } from './features/chordex/components/SaxophoneView';
 export { default as SettingsPanel } from './panels/SettingsPanel';
 export { default as LivexHubSettingsPanel, default as StudioHubSettingsPanel } from './features/hub/settings/LivexHubSettingsPanel';
 export { default as ChordexPreferencesPanel } from './features/chordex/preferences/ChordexPreferencesPanel';
-export { default as HubChangelogSection } from './features/hub/settings/HubChangelogSection';
 export { SongsPanel } from './features/chordex';
 export { DrumEditor } from './features/drumex';
 export { GroovexApp } from './features/groovex';
@@ -52,7 +50,6 @@ export { SongPracticeView } from './features/chordex/pages/SongPracticeView';
 // Remaining components in ui-shared/components
 export { default as AccountCard } from './features/auth/components/AccountCard';
 export { default as ApplyToSheet } from './features/chordex/components/ApplyToSheet';
-export { default as ChangelogSheet } from './features/chordex/components/ChangelogSheet';
 export { default as CustomChordBuilder } from './features/chordex/components/CustomChordBuilder';
 export { default as DisabledAccountScreen } from './features/auth/screens/DisabledAccountScreen';
 export * from './shared/icons/DownloadIcon';
@@ -61,7 +58,6 @@ export * from './shared/typography/ScrollFade';
 export * from './shared/settings/SettingControls';
 export { default as LivexAuthCard, default as StudioAuthCard } from './features/auth/components/LivexAuthCard';
 export { default as LivexPricingSection, default as StudioPricingSection } from './features/auth/components/LivexPricingSection';
-export { default as LivexUpdateScreen, default as StudioUpdateScreen } from './features/updater/components/LivexUpdateScreen';
 export { default as ProfileDropdown } from './features/auth/components/ProfileDropdown';
 
 // Animata
