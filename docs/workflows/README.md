@@ -10,7 +10,7 @@ This directory contains the mandatory engineering workflows that govern all deve
 | ---------------------------------------------------------------- | ------------------------------------------------- |
 | [global-engineering-workflow.md](global-engineering-workflow.md) | The 12-step mandatory workflow for every task     |
 | [architectural-invariant.md](architectural-invariant.md)         | Shared-first development rule and system registry |
-| [android-emulator-verification-protocol.md](android-emulator-verification-protocol.md) | Mandatory Android Studio emulator & ADB screenshot quality gate |
+| [android-emulator-verification-protocol.md](android-emulator-verification-protocol.md) | Native Android Studio emulator & ADB verification protocol (production release gate) |
 
 ## Rules
 

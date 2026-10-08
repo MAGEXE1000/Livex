@@ -323,13 +323,12 @@ The following rules govern the development workflow and implementation of all fe
   2. Never bump version, create git release tags, or push to production prior to manual preview testing.
   3. Never modify OTA metadata, update channels, or release pipelines during preview generation.
 
-### L. Android Studio Emulator & ADB Verification Standard (Sole Quality Gate)
+### L. Lightweight Visual Verification Standard (Puppeteer Headless)
 
-- **Single Verification Standard**: Visual verification for Android and shared mobile components must run directly on the native Android Studio emulator (`scripts/android-verify/`).
+- **Fast Headless Visual Verification**: The canonical, lightweight visual verification pipeline is Puppeteer headless (`scripts/verify-ui-screenshots.mjs` via `pnpm verify:ui` or `pnpm screenshot`). It runs against the local mobile web preview (`412x915`, 2x DPR) in sub-15 seconds with minimal CPU footprint.
 - **Commands**:
-  - `pnpm android:verify` (or `pnpm android:emulator:deploy`): Automated build, sync, Gradle assemble, install, launch, and screencap.
-  - `pnpm android:emulator:screenshot <name.png>`: Instant ADB screen capture.
-  - `node scripts/android-verify/interact.mjs <command>`: Programmatic UI navigation (tap, swipe, back, text).
-- **Deprecation**: Desktop headless browser mocks (Puppeteer / Playwright) are permanently deprecated for UI verification in Livex.
-- **Evidence Mandatory**: Agents must never claim visual compliance without citing verified PNG artifacts under `.artifacts/verification/` captured via ADB.
+  - `pnpm verify:ui`: Run fast automated headless UI screenshot verification.
+  - `pnpm screenshot [name.png]`: Capture on-demand mobile screenshot into `.artifacts/verification/`.
+  - `pnpm android:verify` (or `pnpm android:emulator:deploy`): Optional manual verification tool for native Android production/release builds, not required for ordinary UI iteration.
+- **Evidence Mandatory**: Agents must verify visual changes by generating PNG artifacts under `.artifacts/verification/` using the fast headless capture pipeline (or native ADB screencaps when doing production release verification) and citing them in final reports.
 

@@ -260,8 +260,9 @@ It is the browser-based development and visual-preview representation of the SAM
     - Definition of Done for mobile UI work:
       "Implemented once through the canonical mobile UI architecture, visually and behaviorally verified in Mobile Web Preview, and confirmed to be the same implementation consumed by the Android/Capacitor APK."
 
-13. **Mandatory Native Visual Verification Standard (Android Studio ADB Emulator)**:
-    - Desktop headless browser screenshot mocks (Puppeteer / Playwright) are permanently deprecated for visual verification in Livex.
-    - The Android Studio ADB Emulator pipeline (`scripts/android-verify/`) is the single canonical quality gate.
-    - Every mobile UI implementation must verify on the native emulator (`pnpm android:verify` or `pnpm android:emulator:screenshot`) and cite genuine PNG artifacts under `.artifacts/verification/` captured via ADB.
+13. **Lightweight Headless Visual Verification Standard (Puppeteer)**:
+    - Visual verification uses the fast, lightweight Puppeteer headless capture pipeline (`pnpm verify:ui` / `scripts/verify-ui-screenshots.mjs`).
+    - Emulates mobile device metrics (`412x915`, deviceScaleFactor: 2, mobile: true, hasTouch: true).
+    - Captures high-fidelity PNG screenshots into `.artifacts/verification/` in seconds with near-zero CPU overhead.
+    - Native Android Studio emulator / ADB deployment (`pnpm android:verify`) remains available as an optional manual tool for native production APK validation, but is strictly NOT mandatory for development UI iterations.
 

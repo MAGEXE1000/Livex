@@ -28,6 +28,8 @@
     "android:emulator:screenshot": "node scripts/android-verify/capture-screenshot.mjs",
     "android:emulator:interact": "node scripts/android-verify/interact.mjs",
     "android:verify": "node scripts/android-verify/deploy-emulator.mjs",
+    "verify:ui": "node scripts/verify-ui-screenshots.mjs",
+    "screenshot": "node scripts/verify-ui-screenshots.mjs",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

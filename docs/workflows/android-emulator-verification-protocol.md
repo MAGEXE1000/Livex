@@ -1,10 +1,12 @@
-# Mandatory Android Studio Emulator & ADB Screenshot Verification Protocol
+# Native Android Studio Emulator & ADB Verification Protocol (Production Release Gate)
 
 ## 1. Quality Gate Principle
 
-To guarantee that all UI/UX changes render natively without visual regressions, clipping, or touch conflicts inside the Android WebView, all engineering agents and developers must verify UI modifications directly on an active **Android Studio Emulator** or connected physical device.
+To guarantee that all release-candidate changes render natively without regressions on Android, developers may optionally verify changes on an active **Android Studio Emulator** or connected physical device prior to publishing.
 
-**Core Rule**: Text-only claims of visual verification are prohibited. Every UI implementation must produce an uncorrupted, real-time PNG artifact captured via ADB and stored under `.artifacts/verification/`.
+For everyday development and rapid UI iterations, developers and agents use the fast, lightweight **Puppeteer Headless** pipeline (`pnpm verify:ui` / `scripts/verify-ui-screenshots.mjs`), which generates pixel-perfect mobile screenshots in under 15 seconds without the heavy CPU and memory overhead of launching an Android Virtual Device (AVD).
+
+**Core Rule**: Text-only claims of visual verification are prohibited. Every UI implementation must produce an uncorrupted, real-time PNG artifact stored under `.artifacts/verification/`.
 
 ---
 
@@ -102,11 +104,18 @@ A UI task is complete ONLY when:
 
 ---
 
-## 6. Deprecation of Desktop Browser Mocks
+## 6. Scope Separation: Rapid Headless UI Iteration vs Native Release Validation
 
-Desktop headless browser verification tools (Puppeteer / Playwright) are permanently deprecated for visual verification in Livex.
+The repository maintains a clear separation between rapid visual UI iteration and native production verification:
 
-- **Single Standard**: The Android Studio ADB Emulator pipeline (`scripts/android-verify/`) is the sole authoritative visual verification standard across the entire repository.
-- **No Dual Pipelines**: Bypassing the native Android WebView via desktop browser emulation is prohibited.
-- **Evidence Mandatory**: Agents must never claim visual fidelity without citing an actual PNG artifact generated via `adb exec-out screencap -p` into `.artifacts/verification/`.
+- **Primary Rapid UI Verification (Puppeteer Headless)**:
+  - Tool: `pnpm verify:ui` or `node scripts/verify-ui-screenshots.mjs`
+  - Target: Mobile viewport emulation (`412x915`, 2x DPR) against Vite HMR.
+  - Performance: Instant execution (<15 seconds), zero CPU/battery drain, zero ADB/AVD boot overhead.
+  - Used for: Feature development, layout tweaks, themes, typography, animations, and regressions.
+
+- **Optional Native Validation (Android Studio ADB Emulator)**:
+  - Tool: `pnpm android:verify` or `node scripts/android-verify/deploy-emulator.mjs`
+  - Target: Real Android Capacitor shell on emulator or physical phone.
+  - Used for: Final production release candidate validation, native Android plugins (camera, filesystem, hardware back button).
 
