@@ -46,7 +46,11 @@ export function sanitizeUTF8String(str: string | null | undefined): string {
 
 import * as React from 'react';
 import { Capacitor } from '@capacitor/core';
-function logVersionTransformation(_action: string, _input: string | null | undefined, _output: string | null) {}
+function logVersionTransformation(
+  _action: string,
+  _input: string | null | undefined,
+  _output: string | null
+) {}
 
 export const NATIVE_VERSION = '4.7.3';
 export const NATIVE_VERSION_CODE = 40703;
@@ -99,19 +103,10 @@ export interface ChangelogSection {
 
 export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
-    heading: 'Added',
+    heading: 'Changed',
     items: [
-      'Groovex Immersive Full-Screen Player: Overhauled the player UI into a full-screen AMOLED experience with enlarged 320px album cover artwork, dynamic ambient backdrop color glow, and elevated concentric rounded surfaces.',
-      'Dynamic Waveform Spectrum & Laser Progress Scrubber: Integrated a 44-bar interactive audio frequency spectrum visualizer with harmonic pulse animation, a glowing gradient progress track with laser shimmer sweep, and a dual-ring neon aura playhead thumb.',
-      'Automatic Online High-Res Album Art Service: Deployed album cover art engine with instant in-memory and persistent caching.',
-    ],
-  },
-  {
-    heading: 'Improved',
-    items: [
-      'Top Header Track Title Display: Displays "NOW PLAYING" with dynamic, cleanly centered and truncated song title.',
-      'Multitrack Stem Audio Engine Acceleration: Eliminated playback lockups through concurrent stem downloading/decoding with aggregate throttled progress reporting.',
-      'Purged Skeuomorphic Sound Artifacts: Removed platter deceleration delay and synthetic vinyl crackle from transport controls.',
+      'Complete eradication of internal updater module, in-app changelog views, and binary download services across all platforms for Google Play Store Device and Network Abuse policy compliance.',
+      'Synchronized release coordinates to 4.7.3 (versionCode 40703).',
     ],
   },
 ];
@@ -126,6 +121,14 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.7.3',
+    date: '2026-10-08',
+    highlights: [
+      'Complete eradication of internal updater module, in-app changelog views, and binary download services across all platforms for Google Play Store Device and Network Abuse policy compliance.',
+      'Synchronized release coordinates to 4.7.3 (versionCode 40703).',
+    ],
+  },
   {
     version: '4.7.2',
     date: '2026-10-06',
@@ -224,16 +227,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Touch Drag Line Selection & Android Context Menu Isolation: Completely eliminated WebView text selection callouts, copy/paste context bubbles, and pan gesture locks during multi-line timing assignment by enforcing `user-select: none`, `-webkit-touch-callout: none`, and dynamically disabling canvas `contentEditable` while in batch assignment mode.',
       'Non-Colliding Gesture vs Tap Engine: Enhanced `useLineRangeSelection` with a 6px movement threshold and RAF-throttled continuous line range expansion, resolving synthetic click collisions and ensuring butter-smooth touch interaction on mobile devices.',
       'Live Settings Modal Clean-Up: Streamlined the modal header to "Live Settings" and completely purged the obsolete global "BARS PER LINE" card, ensuring playback progression derives authoritatively from song lyric line timing.',
-    ],
-  },
-  {
-    version: '4.6.93',
-    date: '2026-10-03',
-    highlights: [
-      'Batch Bars-per-Line Assignment Dock: Integrated a dedicated "Set Bars per Line" action in the editor Floating Action Button (+) menu with multi-line tap and drag selection, enabling instant bulk bar allocation via `[1 Bar]`, `[2 Bars]`, `[4 Bars]`, and `[Custom…]` preset chips.',
-      'Multi-Line Range Selection Engine: Implemented `useLineRangeSelection` with drag-to-select support, requestAnimationFrame frame coalescing, and non-blocking canvas interactions.',
-      'Bulk Timing Pacing Allocator: Added `applyBarsToLines` immutable helper to assign measures to multiple lines in a single atomic undoable document change, skipping timed interludes and cleaning redundant section overrides.',
-      'Automated Navigation Test Debounce Stabilization: Resolved a 280ms back-dispatcher debounce collision in `run-navigation-core-tests.mjs`, ensuring repeatable clean passes across automated test and CI suites.',
     ],
   },
 ];

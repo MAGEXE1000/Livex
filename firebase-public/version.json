@@ -8,8 +8,13 @@
   "releasedAt": "10/7/2026, 10:17:20 PM CST",
   "buildTimestamp": "10/7/2026, 10:17:20 PM CST",
   "updateMode": "refresh",
-  "changelog": "",
-  "whatsNew": "",
-  "releaseNotes": {},
+  "changelog": "• Complete eradication of internal updater module, in-app changelog views, and binary download services across all platforms for Google Play Store Device and Network Abuse policy compliance.\n• Synchronized release coordinates to 4.7.3 (versionCode 40703).",
+  "whatsNew": "• Complete eradication of internal updater module, in-app changelog views, and binary download services across all platforms for Google Play Store Device and Network Abuse policy compliance.\n• Synchronized release coordinates to 4.7.3 (versionCode 40703).",
+  "releaseNotes": {
+    "changed": [
+      "Complete eradication of internal updater module, in-app changelog views, and binary download services across all platforms for Google Play Store Device and Network Abuse policy compliance.",
+      "Synchronized release coordinates to 4.7.3 (versionCode 40703)."
+    ]
+  },
   "mandatory": false
 }
