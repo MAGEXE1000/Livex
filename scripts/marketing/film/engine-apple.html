@@ -17,166 +17,188 @@
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
 const W = 1440, H = 1080;
-const DURATION = 20; // seconds total
+const DURATION = 20;
 
-// Apple colour palette — nothing cheap, nothing extra
+// Apple colour palette
 const C = {
   black:    '#000000',
-  white:    '#F5F5F7',    // Apple system white
-  gray1:    '#86868B',    // Apple secondary label
-  gray2:    '#3A3A3C',    // Apple tertiary fill
-  gray3:    '#1C1C1E',    // Apple card surface
-  red:      '#E63B2E',    // Livex red
-  yellow:   '#F4C542',    // Livex yellow
-  phoneDark:'#1A1A1C',    // Pixel body
-  phoneEdge:'#2C2C2E',    // Pixel highlight
+  white:    '#F5F5F7',
+  gray1:    '#86868B',
+  gray2:    '#3A3A3C',
+  gray3:    '#1C1C1E',
+  red:      '#E63B2E',
+  yellow:   '#F4C542',
 };
 
 // ─── EASING ───────────────────────────────────────────────────────────────────
 const ease = {
-  outCubic:    t => 1 - Math.pow(1 - t, 3),
-  outQuart:    t => 1 - Math.pow(1 - t, 4),
-  outQuint:    t => 1 - Math.pow(1 - t, 5),
-  inCubic:     t => t * t * t,
-  inOutCubic:  t => t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2, 3)/2,
-  // Spring: overshoots 8%, settles at 1.0
+  outCubic:   t => 1 - Math.pow(1 - t, 3),
+  outQuart:   t => 1 - Math.pow(1 - t, 4),
+  outQuint:   t => 1 - Math.pow(1 - t, 5),
+  outExpo:    t => t === 1 ? 1 : 1 - Math.pow(2, -10 * t),
+  inCubic:    t => t * t * t,
+  inQuart:    t => t * t * t * t,
+  inOutCubic: t => t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2, 3)/2,
+
+  // Dramatic spring: 12% overshoot, visible bounce, settles crisp
   spring: t => {
-    const o = ease.outCubic(t);
-    return o + 0.08 * Math.sin(t * Math.PI * 3.2) * Math.exp(-t * 5) * (1 - t);
+    const base = ease.outQuint(t);
+    return base + 0.12 * Math.sin(t * Math.PI * 3.8) * Math.exp(-t * 6) * (1 - t);
+  },
+  // Soft spring for scale: 6% overshoot
+  softSpring: t => {
+    const base = ease.outQuart(t);
+    return base + 0.06 * Math.sin(t * Math.PI * 3.0) * Math.exp(-t * 5) * (1 - t);
   },
 };
 
-// Clamp t into [start, end] and return 0→1 progress through that window
+// Clamp t into [start, end] → 0→1 progress
 function prog(t, start, end, fn = ease.outCubic) {
   if (t <= start) return 0;
   if (t >= end)   return 1;
   return fn((t - start) / (end - start));
 }
 
-// ─── CANVAS UTILITIES ─────────────────────────────────────────────────────────
+// ─── CANVAS UTILITY ───────────────────────────────────────────────────────────
 function rr(ctx, x, y, w, h, r) {
   r = Math.min(r, w / 2, h / 2);
   ctx.beginPath();
   ctx.moveTo(x + r, y);
   ctx.lineTo(x + w - r, y);
-  ctx.arcTo(x + w, y, x + w, y + r, r);
+  ctx.arcTo(x + w, y,     x + w, y + r,     r);
   ctx.lineTo(x + w, y + h - r);
   ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
   ctx.lineTo(x + r, y + h);
-  ctx.arcTo(x, y + h, x, y + h - r, r);
+  ctx.arcTo(x, y + h,     x, y + h - r,     r);
   ctx.lineTo(x, y + r);
-  ctx.arcTo(x, y, x + r, y, r);
+  ctx.arcTo(x, y,         x + r, y,         r);
   ctx.closePath();
 }
 
-// ─── PHONE FRAME ─────────────────────────────────────────────────────────────
-// Google Pixel 9 Pro proportions drawn in canvas 2D
-function drawPhone(ctx, cx, cy, scale, screenFn, { alpha = 1, offsetY = 0 } = {}) {
-  const s = scale;
-  const PW = 264 * s;   // body width
-  const PH = 562 * s;   // body height
-  const BR = 38 * s;    // body corner radius
-  const BL = 8 * s;     // side bezel
+// ─── PHONE FRAME — Google Pixel 9 (near-bezel-less) ─────────────────────────
+// Real Pixel 9 ratio: 71.8 × 152.1 mm  →  0.472
+// At scale=1: body 296 × 637, screen 288 × 613 (4px sides, 14px top, 10px chin)
+function drawPhone(ctx, cx, cy, scale, screenFn, { alpha = 1, offsetY = 0, scaleY = 1 } = {}) {
+  const s  = scale;
+  const PW = 296 * s;   // body width
+  const PH = 637 * s;   // body height
+  const BR = 44 * s;    // body corner radius (very round, like Pixel 9)
+  const BL = 4  * s;    // side bezel — near-zero
   const BT = 14 * s;    // top bezel
-  const BB = 24 * s;    // bottom chin
-  const SR = 22 * s;    // screen corner radius
-  const SW = PW - BL * 2;
-  const SH = PH - BT - BB;
+  const BB = 10 * s;    // chin — very small
+  const SR = 38 * s;    // screen corner radius (slightly less than body)
+  const SW = PW - BL * 2;        // screen width  = 288s
+  const SH = PH - BT - BB;       // screen height = 613s
 
   ctx.save();
   ctx.translate(cx, cy + offsetY);
+  // Vertical scale for phone entrance/exit animation
+  if (scaleY !== 1) ctx.scale(1, scaleY);
   ctx.globalAlpha = alpha;
 
-  // ── drop shadow ──
+  // ── deep drop shadow ──
   ctx.save();
-  ctx.shadowColor = 'rgba(0,0,0,0.75)';
-  ctx.shadowBlur = 80 * s;
-  ctx.shadowOffsetY = 40 * s;
+  ctx.shadowColor   = 'rgba(0,0,0,0.85)';
+  ctx.shadowBlur    = 90 * s;
+  ctx.shadowOffsetY = 50 * s;
   rr(ctx, -PW/2, -PH/2, PW, PH, BR);
-  ctx.fillStyle = C.phoneDark;
+  ctx.fillStyle = '#0A0A0C';
   ctx.fill();
   ctx.restore();
 
-  // ── body ──
+  // ── body gradient (matte Pixel black) ──
   rr(ctx, -PW/2, -PH/2, PW, PH, BR);
   const bg = ctx.createLinearGradient(-PW/2, -PH/2, PW/2, PH/2);
-  bg.addColorStop(0,   '#2E2E32');
-  bg.addColorStop(0.45,'#1A1A1C');
-  bg.addColorStop(1,   '#111113');
+  bg.addColorStop(0,    '#2E2E32');
+  bg.addColorStop(0.35, '#1C1C1E');
+  bg.addColorStop(1,    '#0E0E10');
   ctx.fillStyle = bg;
   ctx.fill();
-  // thin edge highlight
-  ctx.strokeStyle = 'rgba(255,255,255,0.07)';
-  ctx.lineWidth = 1;
+
+  // thin polished edge
+  rr(ctx, -PW/2, -PH/2, PW, PH, BR);
+  ctx.strokeStyle = 'rgba(255,255,255,0.09)';
+  ctx.lineWidth = 1.2;
   ctx.stroke();
 
-  // ── screen clip + fill ──
+  // ── screen area: clip and draw screenshot ──
   ctx.save();
   rr(ctx, -SW/2, -PH/2 + BT, SW, SH, SR);
   ctx.fillStyle = '#000';
   ctx.fill();
   ctx.clip();
 
-  // draw app screenshot inside screen coords
+  // The screenshot is drawn in [0, 0, SW, SH] space
   ctx.translate(-SW/2, -PH/2 + BT);
   if (typeof screenFn === 'function') screenFn(ctx, SW, SH);
   ctx.restore();
 
-  // ── screen specular gloss ──
-  const gloss = ctx.createLinearGradient(-SW/2, -PH/2+BT, SW/2, -PH/2+BT+SH*0.28);
-  gloss.addColorStop(0, 'rgba(255,255,255,0.055)');
+  // ── screen gloss overlay ──
+  const gloss = ctx.createLinearGradient(-SW/2, -PH/2+BT, SW/2, -PH/2+BT + SH*0.25);
+  gloss.addColorStop(0, 'rgba(255,255,255,0.06)');
   gloss.addColorStop(1, 'rgba(255,255,255,0)');
   rr(ctx, -SW/2, -PH/2+BT, SW, SH, SR);
   ctx.fillStyle = gloss;
   ctx.fill();
 
-  // ── punch-hole camera ──
-  ctx.beginPath();
-  ctx.arc(0, -PH/2 + BT*0.55, 4.5*s, 0, Math.PI*2);
+  // ── punch-hole camera — pill shape, centered at top ──
+  const camX = 0;
+  const camY = -PH/2 + BT * 0.52;
+  const camW = 14 * s;
+  const camH =  5 * s;
+  const camR =  2.5 * s;
+  rr(ctx, camX - camW/2, camY - camH/2, camW, camH, camR);
   ctx.fillStyle = '#060608';
   ctx.fill();
+  // subtle ring around camera
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
 
-  // ── side buttons ──
-  ctx.fillStyle = '#252528';
+  // ── side buttons (very flush, modern Pixel 9 style) ──
+  ctx.fillStyle = '#222226';
   // Volume Up
-  rr(ctx, -PW/2 - 3.5*s, -PH*0.17, 4*s, 26*s, 2*s);
+  rr(ctx, -PW/2 - 3*s, -PH*0.175, 3.5*s, 28*s, 2*s);
   ctx.fill();
   // Volume Down
-  rr(ctx, -PW/2 - 3.5*s, PH*0.04, 4*s, 26*s, 2*s);
+  rr(ctx, -PW/2 - 3*s,  PH*0.035,  3.5*s, 28*s, 2*s);
   ctx.fill();
-  // Power/Lock (right)
-  rr(ctx, PW/2 - 0.5*s, -PH*0.07, 4.5*s, 38*s, 2.5*s);
-  ctx.fill();
-
-  // ── Pixel camera bar (back visible at edge — subtle top strip) ──
-  const barH = 6*s;
-  rr(ctx, -PW/2 + 16*s, -PH/2, PW - 32*s, barH, 3*s);
-  ctx.fillStyle = 'rgba(255,255,255,0.03)';
+  // Power / Lock (right side)
+  rr(ctx,  PW/2 - 0.5*s, -PH*0.095, 3.5*s, 40*s, 2*s);
   ctx.fill();
 
   ctx.restore();
 }
 
-// ─── APP SCREEN RENDERERS ─────────────────────────────────────────────────────
-// Each draws into a [0, 0, sw, sh] coordinate space
-
-// App screenshots injected by render.mjs
+// ─── SCREENSHOT INJECTION (Promise-based) ────────────────────────────────────
 let _shots = { hub: null, groovex: null, live: null };
+window._screenshotsReady = Promise.resolve();
 
 window.injectScreenshots = function(hubDataUrl, groovexDataUrl, liveDataUrl) {
-  const load = (url) => {
+  const loadImg = (url) => new Promise((resolve) => {
     const img = new Image();
+    img.onload  = () => resolve(img);
+    img.onerror = () => { console.warn('[engine] Image failed to load'); resolve(null); };
     img.src = url;
-    return img;
-  };
-  _shots.hub     = load(hubDataUrl);
-  _shots.groovex = load(groovexDataUrl);
-  _shots.live    = load(liveDataUrl);
+  });
+
+  window._screenshotsReady = Promise.all([
+    loadImg(hubDataUrl),
+    loadImg(groovexDataUrl),
+    loadImg(liveDataUrl),
+  ]).then(([hub, groovex, live]) => {
+    _shots.hub    = hub;
+    _shots.groovex = groovex;
+    _shots.live   = live;
+    console.log('[engine] Screenshots ready:', !!hub, !!groovex, !!live);
+  });
+
+  return window._screenshotsReady;
 };
 
+// Draw a screenshot into [0, 0, sw, sh] with object-fit: cover semantics
 function drawScreenshot(ctx, sw, sh, img) {
   if (img && img.complete && img.naturalWidth > 0) {
-    // Fit + crop to fill the screen rect (object-fit: cover)
     const ir = img.naturalWidth / img.naturalHeight;
     const sr = sw / sh;
     let sx = 0, sy = 0, sW = img.naturalWidth, sH = img.naturalHeight;
@@ -189,23 +211,28 @@ function drawScreenshot(ctx, sw, sh, img) {
     }
     ctx.drawImage(img, sx, sy, sW, sH, 0, 0, sw, sh);
   } else {
-    // Fallback: minimal dark placeholder
-    ctx.fillStyle = '#0D0D0F';
+    // Dark placeholder — app chrome feeling
+    ctx.fillStyle = '#090A0C';
     ctx.fillRect(0, 0, sw, sh);
-    ctx.fillStyle = 'rgba(255,255,255,0.06)';
-    ctx.fillRect(sw*0.1, sh*0.4, sw*0.8, 2);
-    ctx.fillRect(sw*0.1, sh*0.55, sw*0.6, 2);
-    ctx.fillRect(sw*0.1, sh*0.7, sw*0.7, 2);
+    // Status bar stub
+    ctx.fillStyle = 'rgba(255,255,255,0.04)';
+    ctx.fillRect(0, 0, sw, 28);
+    // Content stubs
+    ctx.fillStyle = 'rgba(255,255,255,0.05)';
+    ctx.fillRect(sw*0.08, sh*0.22, sw*0.84, 14);
+    ctx.fillRect(sw*0.08, sh*0.28, sw*0.60, 10);
+    ctx.fillRect(sw*0.08, sh*0.50, sw*0.75, 12);
+    ctx.fillRect(sw*0.08, sh*0.56, sw*0.50, 10);
   }
 }
 
-// ─── TYPOGRAPHY HELPERS ───────────────────────────────────────────────────────
+// ─── TYPOGRAPHY ───────────────────────────────────────────────────────────────
 function drawLabel(ctx, text, x, y, {
   size = 80, weight = 600, color = C.white,
   alpha = 1, drift = 0, align = 'left',
   tracking = -0.02,
 } = {}) {
-  if (alpha <= 0) return;
+  if (alpha <= 0.005) return;
   ctx.save();
   ctx.globalAlpha = alpha;
   ctx.fillStyle = color;
@@ -218,235 +245,286 @@ function drawLabel(ctx, text, x, y, {
 
 // ─── BACKGROUND ───────────────────────────────────────────────────────────────
 function drawBackground(ctx, t) {
-  // Always black — Apple's product video canvas
   ctx.fillStyle = C.black;
   ctx.fillRect(0, 0, W, H);
 
-  // Scenes 2-4: very subtle dark vignette to add depth without competing
-  const sceneAlpha = prog(t, 4.0, 5.5) * (1 - prog(t, 16.5, 17.5));
-  if (sceneAlpha > 0) {
-    const vig = ctx.createRadialGradient(W/2, H/2, H*0.2, W/2, H/2, H*0.85);
-    vig.addColorStop(0, 'rgba(6,6,8,0)');
-    vig.addColorStop(1, `rgba(0,0,0,${0.55 * sceneAlpha})`);
+  // During feature scenes: very subtle deep vignette
+  const va = prog(t, 4.2, 5.8) * (1 - prog(t, 16.5, 17.5));
+  if (va > 0.005) {
+    const vig = ctx.createRadialGradient(W/2, H/2, H*0.15, W/2, H/2, H*0.9);
+    vig.addColorStop(0, 'rgba(4,4,6,0)');
+    vig.addColorStop(1, `rgba(0,0,0,${0.5 * va})`);
     ctx.fillStyle = vig;
     ctx.fillRect(0, 0, W, H);
   }
 }
 
-// ─── SCENE DEFINITIONS ────────────────────────────────────────────────────────
+// ─── SCENE LAYOUT ─────────────────────────────────────────────────────────────
 //
-//  Act 1  0.0 – 4.5s   Brand intro
-//  Act 2  4.5 – 9.5s   Hub Library feature
-//  Act 3  9.5 – 13.5s  Groovex feature
-//  Act 4  13.5 – 17.5s Live mode feature
-//  Act 5  17.5 – 20.0s Outro
+//  Act 1   0.0 – 4.5s   Brand intro          (centred)
+//  Act 2   4.5 – 9.5s   Hub Library          (phone right, text left)
+//  Act 3   9.5 – 13.5s  Groovex              (phone right, text left)
+//  Act 4  13.5 – 17.5s  Live Mode            (phone right, text left, red)
+//  Act 5  17.5 – 20.0s  Outro                (centred resolve)
+//
+// Text left column  x = 108
+// Phone centre      x = W * 0.635
 //
 
-// ─── ACT 1: Brand intro ───────────────────────────────────────────────────────
+// ─── ACT 1: Brand Intro ───────────────────────────────────────────────────────
 function drawAct1(ctx, t) {
-  // "Livex." — large, white, centered
-  const titleAlpha  = prog(t, 1.2, 2.8, ease.outQuart) * (1 - prog(t, 3.8, 4.4, ease.inCubic));
-  const titleDrift  = (1 - prog(t, 1.2, 2.8, ease.outQuart)) * 32;
-  const titleScale  = 0.94 + 0.06 * prog(t, 1.2, 2.8, ease.outQuart);
+  // "Livex." — scale + drift from below, large and confident
+  const titleP     = prog(t, 0.8, 2.4, ease.outQuint);
+  const titleAlpha = titleP * (1 - prog(t, 3.6, 4.4, ease.inQuart));
+  const titleDrift = (1 - titleP) * 90;          // 90px travel — very visible
+  const titleScale = 0.90 + 0.10 * prog(t, 0.8, 2.4, ease.softSpring);
 
-  if (titleAlpha > 0) {
+  if (titleAlpha > 0.005) {
     ctx.save();
-    ctx.translate(W/2, H/2 - 40);
+    ctx.translate(W/2, H/2 - 52);
     ctx.scale(titleScale, titleScale);
     drawLabel(ctx, 'Livex.', 0, 0, {
-      size: 108, weight: 700, color: C.white,
+      size: 120, weight: 700, color: C.white,
       alpha: titleAlpha, drift: titleDrift, align: 'center',
-      tracking: -0.03,
+      tracking: -0.035,
     });
     ctx.restore();
   }
 
-  // Subtitle: "Next-gen musician studio."
-  const subAlpha = prog(t, 2.8, 4.0, ease.outCubic) * (1 - prog(t, 3.8, 4.4, ease.inCubic));
-  const subDrift = (1 - prog(t, 2.8, 4.0, ease.outCubic)) * 22;
-  drawLabel(ctx, 'Next-gen musician studio.', W/2, H/2 + 68, {
-    size: 28, weight: 300, color: C.gray1,
+  // Subtitle — staggered, slightly smaller travel
+  const subP     = prog(t, 2.2, 3.6, ease.outQuart);
+  const subAlpha = subP * (1 - prog(t, 3.6, 4.3, ease.inCubic));
+  const subDrift = (1 - subP) * 40;
+
+  drawLabel(ctx, 'Next-gen musician studio.', W/2, H/2 + 62, {
+    size: 30, weight: 300, color: C.gray1,
     alpha: subAlpha, drift: subDrift, align: 'center',
     tracking: 0,
   });
 }
 
-// ─── ACT 2: Hub Library ───────────────────────────────────────────────────────
-function drawAct2(ctx, t) {
-  // Phone: enters at t=4.5 (spring from below), exits at t=9.5
-  const phoneEnterP = prog(t, 4.5, 6.2, ease.spring);
-  const phoneExitP  = prog(t, 16.8, 17.6, ease.inCubic);
-  const phoneAlpha  = phoneEnterP * (1 - phoneExitP);
-  const phoneOffsetY = (1 - prog(t, 4.5, 6.2, ease.outQuart)) * 180;
-  // Subtle ambient float
-  const floatY = Math.sin(t * 0.6) * 5;
+// ─── PHONE (shared across acts 2–4) ──────────────────────────────────────────
+function drawPhoneScene(ctx, t) {
+  // Entrance spring — 320px travel + 0.88→1.0 scale, very dramatic
+  const entP      = prog(t, 4.5, 6.4, ease.spring);
+  const entScale  = 0.88 + 0.12 * prog(t, 4.5, 6.4, ease.softSpring);
+  const exitP     = prog(t, 16.8, 17.8, ease.inQuart);
+  const phoneAlpha = entP * (1 - exitP);
+  const phoneOffY  = (1 - prog(t, 4.5, 6.4, ease.outQuint)) * 320;
+  const exitOffY   = exitP * 240;
 
-  if (phoneAlpha > 0) {
-    // Cross-fade between screens based on scene time
-    const showHub     = 1 - prog(t, 9.0, 9.6);
-    const showGroovex = prog(t, 9.0, 9.6) * (1 - prog(t, 13.0, 13.6));
-    const showLive    = prog(t, 13.0, 13.6);
+  // Ambient float — slow sine, natural feel
+  const floatY = Math.sin(t * 0.55) * 7;
 
-    // Draw phone with blended screen
-    if (showHub > 0.01) {
-      drawPhone(ctx, W * 0.62, H/2, 1.38,
-        (c, sw, sh) => { ctx.globalAlpha = showHub; drawScreenshot(c, sw, sh, _shots.hub); ctx.globalAlpha = 1; },
-        { alpha: phoneAlpha * showHub, offsetY: phoneOffsetY + floatY });
-    }
-    if (showGroovex > 0.01) {
-      drawPhone(ctx, W * 0.62, H/2, 1.38,
-        (c, sw, sh) => { ctx.globalAlpha = showGroovex; drawScreenshot(c, sw, sh, _shots.groovex); ctx.globalAlpha = 1; },
-        { alpha: phoneAlpha * showGroovex, offsetY: phoneOffsetY + floatY });
-    }
-    if (showLive > 0.01) {
-      drawPhone(ctx, W * 0.62, H/2, 1.38,
-        (c, sw, sh) => { ctx.globalAlpha = showLive; drawScreenshot(c, sw, sh, _shots.live); ctx.globalAlpha = 1; },
-        { alpha: phoneAlpha * showLive, offsetY: phoneOffsetY + floatY });
-    }
+  if (phoneAlpha <= 0.005) return;
+
+  const phoneScale = 1.35 * entScale;
+
+  // Screen cross-fades
+  const showHub    = 1 - prog(t, 9.1, 9.7, ease.outCubic);
+  const showGroove = prog(t, 9.1, 9.7, ease.outCubic) * (1 - prog(t, 13.1, 13.7, ease.outCubic));
+  const showLive   = prog(t, 13.1, 13.7, ease.outCubic);
+
+  const CX = W * 0.635;
+  const CY = H / 2;
+
+  // Draw in three separate pass layers to handle alpha cross-fade correctly.
+  // Each drawPhone call is independent — no globalAlpha interference on canvas
+  // because each one saves/restores and we pass alpha via the param.
+  if (showHub > 0.005) {
+    drawPhone(ctx, CX, CY, phoneScale,
+      (c, sw, sh) => { drawScreenshot(c, sw, sh, _shots.hub); },
+      { alpha: phoneAlpha * showHub, offsetY: phoneOffY + exitOffY + floatY });
   }
-
-  // Act 2 text: "Everything" + "you need."
-  const a2In    = prog(t, 5.8, 7.2, ease.outQuart);
-  const a2Out   = prog(t, 8.8, 9.4, ease.inCubic);
-  const a2Alpha = a2In * (1 - a2Out);
-  const a2Drift = (1 - a2In) * 28;
-
-  if (a2Alpha > 0.01) {
-    drawLabel(ctx, 'Everything', 108, H/2 - 50, {
-      size: 86, weight: 700, color: C.white,
-      alpha: a2Alpha, drift: a2Drift, tracking: -0.03,
-    });
-    const subIn = prog(t, 6.8, 8.0, ease.outQuart);
-    const subDrift = (1 - subIn) * 22;
-    drawLabel(ctx, 'you need.', 108, H/2 + 58, {
-      size: 86, weight: 700, color: C.gray1,
-      alpha: a2Alpha * subIn, drift: subDrift, tracking: -0.03,
-    });
+  if (showGroove > 0.005) {
+    drawPhone(ctx, CX, CY, phoneScale,
+      (c, sw, sh) => { drawScreenshot(c, sw, sh, _shots.groovex); },
+      { alpha: phoneAlpha * showGroove, offsetY: phoneOffY + exitOffY + floatY });
   }
-
-  // Act 3 text: "Practice" + "perfectly."
-  const a3In    = prog(t, 9.8, 11.2, ease.outQuart);
-  const a3Out   = prog(t, 12.8, 13.4, ease.inCubic);
-  const a3Alpha = a3In * (1 - a3Out);
-  const a3Drift = (1 - a3In) * 28;
-
-  if (a3Alpha > 0.01) {
-    drawLabel(ctx, 'Practice', 108, H/2 - 50, {
-      size: 86, weight: 700, color: C.white,
-      alpha: a3Alpha, drift: a3Drift, tracking: -0.03,
-    });
-    const s3In = prog(t, 10.8, 12.0, ease.outQuart);
-    drawLabel(ctx, 'perfectly.', 108, H/2 + 58, {
-      size: 86, weight: 700, color: C.gray1,
-      alpha: a3Alpha * s3In, drift: (1 - s3In) * 22, tracking: -0.03,
-    });
-  }
-
-  // Act 4 text: "Perform" + "live."
-  const a4In    = prog(t, 13.8, 15.2, ease.outQuart);
-  const a4Out   = prog(t, 16.8, 17.4, ease.inCubic);
-  const a4Alpha = a4In * (1 - a4Out);
-  const a4Drift = (1 - a4In) * 28;
-
-  if (a4Alpha > 0.01) {
-    drawLabel(ctx, 'Perform', 108, H/2 - 50, {
-      size: 86, weight: 700, color: C.white,
-      alpha: a4Alpha, drift: a4Drift, tracking: -0.03,
-    });
-    const s4In = prog(t, 14.8, 16.0, ease.outQuart);
-    drawLabel(ctx, 'live.', 108, H/2 + 58, {
-      size: 86, weight: 700, color: C.red,
-      alpha: a4Alpha * s4In, drift: (1 - s4In) * 22, tracking: -0.03,
-    });
+  if (showLive > 0.005) {
+    drawPhone(ctx, CX, CY, phoneScale,
+      (c, sw, sh) => { drawScreenshot(c, sw, sh, _shots.live); },
+      { alpha: phoneAlpha * showLive, offsetY: phoneOffY + exitOffY + floatY });
   }
 }
 
-// ─── ACT 5: Outro ─────────────────────────────────────────────────────────────
-function drawAct5(ctx, t) {
-  // "Livex." — clean centered resolve
-  const outroA = prog(t, 17.8, 19.0, ease.outQuart) * (1 - prog(t, 19.5, 20.0, ease.inCubic));
-  if (outroA > 0.01) {
-    drawLabel(ctx, 'Livex.', W/2, H/2 - 28, {
-      size: 80, weight: 700, color: C.white,
-      alpha: outroA, drift: (1 - prog(t, 17.8, 19.0, ease.outQuart)) * 24, align: 'center',
-      tracking: -0.03,
-    });
+// ─── FEATURE TAG (small red uppercase above headline) ─────────────────────────
+function drawTag(ctx, t) {
+  let label = '', alpha = 0, xSlide = 0;
+
+  if (t >= 4.9 && t < 9.5) {
+    label  = 'Hub & Library';
+    const ip = prog(t, 5.8, 7.0, ease.outQuint);
+    alpha  = ip * (1 - prog(t, 8.8, 9.5, ease.inCubic));
+    xSlide = (1 - ip) * -40;
+  } else if (t >= 9.5 && t < 13.5) {
+    label  = 'Groovex';
+    const ip = prog(t, 9.8, 11.0, ease.outQuint);
+    alpha  = ip * (1 - prog(t, 12.8, 13.4, ease.inCubic));
+    xSlide = (1 - ip) * -40;
+  } else if (t >= 13.5 && t < 17.5) {
+    label  = 'Live Mode';
+    const ip = prog(t, 13.8, 15.0, ease.outQuint);
+    alpha  = ip * (1 - prog(t, 16.8, 17.4, ease.inCubic));
+    xSlide = (1 - ip) * -40;
   }
 
-  // "livex.app"
-  const tagA = prog(t, 18.6, 19.4, ease.outCubic) * (1 - prog(t, 19.5, 20.0, ease.inCubic));
-  if (tagA > 0.01) {
-    drawLabel(ctx, 'livex.app', W/2, H/2 + 38, {
-      size: 22, weight: 400, color: C.gray1,
-      alpha: tagA, drift: (1 - prog(t, 18.6, 19.4, ease.outCubic)) * 14, align: 'center',
-      tracking: 0.02,
-    });
+  if (alpha > 0.005 && label) {
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle  = C.red;
+    ctx.font       = `500 14px Geist, system-ui`;
+    ctx.letterSpacing = '0.13em';
+    ctx.fillText(label.toUpperCase(), 108 + xSlide, H/2 - 114);
+    ctx.restore();
   }
 }
 
-// ─── DIVIDER LINE (Acts 2-4) ──────────────────────────────────────────────────
+// ─── HEADLINE TEXT (Acts 2–4) ─────────────────────────────────────────────────
+function drawHeadlines(ctx, t) {
+  // Act 2 — "Everything / you need."
+  {
+    const ip   = prog(t, 5.6, 7.0, ease.outQuint);
+    const op   = prog(t, 8.8, 9.5, ease.inCubic);
+    const a    = ip * (1 - op);
+    const d1   = (1 - ip) * 100;            // 100px travel — unmissable
+    if (a > 0.005) {
+      drawLabel(ctx, 'Everything', 108, H/2 - 42, {
+        size: 92, weight: 700, color: C.white,
+        alpha: a, drift: d1, tracking: -0.033,
+      });
+    }
+    // Line 2 staggered 0.18s
+    const ip2 = prog(t, 5.78, 7.2, ease.outQuint);
+    const d2  = (1 - ip2) * 100;
+    const a2  = ip2 * (1 - op);
+    if (a2 > 0.005) {
+      drawLabel(ctx, 'you need.', 108, H/2 + 66, {
+        size: 92, weight: 700, color: C.gray1,
+        alpha: a2, drift: d2, tracking: -0.033,
+      });
+    }
+  }
+
+  // Act 3 — "Practice / perfectly."
+  {
+    const ip   = prog(t, 9.7, 11.1, ease.outQuint);
+    const op   = prog(t, 12.8, 13.5, ease.inCubic);
+    const a    = ip * (1 - op);
+    const d1   = (1 - ip) * 100;
+    if (a > 0.005) {
+      drawLabel(ctx, 'Practice', 108, H/2 - 42, {
+        size: 92, weight: 700, color: C.white,
+        alpha: a, drift: d1, tracking: -0.033,
+      });
+    }
+    const ip2 = prog(t, 9.88, 11.3, ease.outQuint);
+    const d2  = (1 - ip2) * 100;
+    const a2  = ip2 * (1 - op);
+    if (a2 > 0.005) {
+      drawLabel(ctx, 'perfectly.', 108, H/2 + 66, {
+        size: 92, weight: 700, color: C.gray1,
+        alpha: a2, drift: d2, tracking: -0.033,
+      });
+    }
+  }
+
+  // Act 4 — "Perform / live."  (second word in Livex red)
+  {
+    const ip   = prog(t, 13.7, 15.1, ease.outQuint);
+    const op   = prog(t, 16.8, 17.5, ease.inCubic);
+    const a    = ip * (1 - op);
+    const d1   = (1 - ip) * 100;
+    if (a > 0.005) {
+      drawLabel(ctx, 'Perform', 108, H/2 - 42, {
+        size: 92, weight: 700, color: C.white,
+        alpha: a, drift: d1, tracking: -0.033,
+      });
+    }
+    const ip2 = prog(t, 13.88, 15.3, ease.outQuint);
+    const d2  = (1 - ip2) * 100;
+    const a2  = ip2 * (1 - op);
+    if (a2 > 0.005) {
+      drawLabel(ctx, 'live.', 108, H/2 + 66, {
+        size: 92, weight: 700, color: C.red,
+        alpha: a2, drift: d2, tracking: -0.033,
+      });
+    }
+  }
+}
+
+// ─── VERTICAL DIVIDER (features section) ─────────────────────────────────────
 function drawDivider(ctx, t) {
-  const a = prog(t, 5.2, 6.0, ease.outCubic) * (1 - prog(t, 16.8, 17.5, ease.inCubic));
-  if (a <= 0.01) return;
+  const a = prog(t, 5.0, 6.2, ease.outCubic) * (1 - prog(t, 16.8, 17.6, ease.inCubic));
+  if (a <= 0.005) return;
   ctx.save();
-  ctx.globalAlpha = a * 0.18;
+  ctx.globalAlpha = a * 0.15;
   ctx.strokeStyle = C.white;
   ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.moveTo(W * 0.05, H / 2 - 130);
-  ctx.lineTo(W * 0.05, H / 2 + 130);
+  ctx.moveTo(W * 0.045, H / 2 - 150);
+  ctx.lineTo(W * 0.045, H / 2 + 150);
   ctx.stroke();
   ctx.restore();
 }
 
-// ─── FEATURE TAG (small uppercase label, acts 2-4) ────────────────────────────
-function drawTag(ctx, t) {
-  // Tiny uppercase category above headline text
-  let label = '';
-  let alpha = 0;
+// ─── ACT 5: Outro ─────────────────────────────────────────────────────────────
+function drawAct5(ctx, t) {
+  // "Livex." reappears centred — drifts up from below, scale from 0.92
+  const ip       = prog(t, 17.8, 19.2, ease.outQuint);
+  const outroA   = ip * (1 - prog(t, 19.5, 20.0, ease.inCubic));
+  const outroDrift = (1 - ip) * 70;
+  const outroScale = 0.92 + 0.08 * prog(t, 17.8, 19.2, ease.softSpring);
 
-  if (t >= 5.0 && t < 9.4) {
-    label = 'Hub & Library';
-    alpha = prog(t, 5.8, 7.0, ease.outCubic) * (1 - prog(t, 8.8, 9.4, ease.inCubic));
-  } else if (t >= 9.4 && t < 13.4) {
-    label = 'Groovex';
-    alpha = prog(t, 9.8, 11.0, ease.outCubic) * (1 - prog(t, 12.8, 13.4, ease.inCubic));
-  } else if (t >= 13.4 && t < 17.5) {
-    label = 'Live Mode';
-    alpha = prog(t, 13.8, 15.0, ease.outCubic) * (1 - prog(t, 16.8, 17.4, ease.inCubic));
+  if (outroA > 0.005) {
+    ctx.save();
+    ctx.translate(W/2, H/2 - 36);
+    ctx.scale(outroScale, outroScale);
+    drawLabel(ctx, 'Livex.', 0, 0, {
+      size: 90, weight: 700, color: C.white,
+      alpha: outroA, drift: outroDrift, align: 'center',
+      tracking: -0.035,
+    });
+    ctx.restore();
   }
 
-  if (alpha > 0.01 && label) {
+  // "livex.app" — slides in from slightly left
+  const tagP  = prog(t, 18.7, 19.5, ease.outCubic);
+  const tagA  = tagP * (1 - prog(t, 19.5, 20.0, ease.inCubic));
+  const tagX  = (1 - tagP) * -30;
+  if (tagA > 0.005) {
     ctx.save();
-    ctx.globalAlpha = alpha;
-    ctx.fillStyle = C.red;
-    ctx.font = `500 13px Geist, system-ui`;
-    ctx.letterSpacing = '0.12em';
-    ctx.fillText(label.toUpperCase(), 108, H/2 - 102);
+    ctx.globalAlpha = tagA;
+    ctx.fillStyle  = C.gray1;
+    ctx.font       = `400 24px Geist, system-ui`;
+    ctx.textAlign  = 'center';
+    ctx.letterSpacing = '0.04em';
+    ctx.fillText('livex.app', W/2 + tagX, H/2 + 50);
     ctx.restore();
   }
 }
 
 // ─── MAIN seek() ──────────────────────────────────────────────────────────────
-window.seek = function(t, _fi) {
+window.seek = function(t) {
   t = Math.max(0, Math.min(DURATION, t));
   const ctx = document.getElementById('c').getContext('2d');
 
   drawBackground(ctx, t);
   drawAct1(ctx, t);
-  drawAct2(ctx, t);   // phone + feature scenes run inside act2
+  drawPhoneScene(ctx, t);
   drawDivider(ctx, t);
   drawTag(ctx, t);
+  drawHeadlines(ctx, t);
   drawAct5(ctx, t);
 };
 
-// ─── BLUR ACCUMULATOR ─────────────────────────────────────────────────────────
+// ─── MOTION BLUR ACCUMULATOR ──────────────────────────────────────────────────
 let _blurCanvas = null;
 
 window.renderBlurredFrame = function(frameIndex, fps, duration) {
   const SUBS = 4;
-  const dt = 1 / fps;
-  const t0 = (frameIndex / fps);
+  const dt   = 1 / fps;
+  const t0   = frameIndex / fps;
 
   if (!_blurCanvas) {
     _blurCanvas = document.createElement('canvas');
@@ -459,7 +537,7 @@ window.renderBlurredFrame = function(frameIndex, fps, duration) {
   bc.clearRect(0, 0, W, H);
   for (let s = 0; s < SUBS; s++) {
     const st = Math.min(duration, t0 + (s / SUBS) * dt);
-    window.seek(st, frameIndex);
+    window.seek(st);
     bc.globalAlpha = 1 / SUBS;
     bc.drawImage(src, 0, 0);
   }
@@ -469,13 +547,15 @@ window.renderBlurredFrame = function(frameIndex, fps, duration) {
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 window.initEngine = function() {
-  // Pre-warm font
   const ctx = document.getElementById('c').getContext('2d');
-  ctx.font = '700 108px Geist, system-ui';
+  // Pre-warm fonts so first rendered frame has no FOIT flash
+  ctx.font = '700 120px Geist, system-ui';
   ctx.fillStyle = 'rgba(0,0,0,0)';
-  ctx.fillText('Livex.', 0, 0);
-  ctx.font = '300 28px Geist, system-ui';
-  ctx.fillText('Next-gen', 0, 0);
+  ctx.fillText('Livex.', 0, -100);
+  ctx.font = '300 30px Geist, system-ui';
+  ctx.fillText('Next-gen musician studio.', 0, -100);
+  ctx.font = '500 14px Geist, system-ui';
+  ctx.fillText('HUB & LIBRARY', 0, -100);
   return true;
 };
 

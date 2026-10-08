@@ -167,15 +167,17 @@ async function main() {
   await page.evaluate(() => window.initEngine());
   await new Promise(r => setTimeout(r, 400));
 
-  // Inject app screenshots into the engine
+  // Inject app screenshots into the engine and wait for all images to fully decode
   console.log('[ENGINE] Injecting app screenshots...');
   await page.evaluate(
     (h, g, l) => window.injectScreenshots(h, g, l),
     hubB64, groovexB64, liveB64
   );
-  // Give images time to fully decode inside the engine
-  await new Promise(r => setTimeout(r, 600));
-  console.log('[ENGINE] Screenshots injected. Ready to render.');
+  // Await Promise-based decode (all three PNGs loaded via img.onload)
+  await page.evaluate(() => window._screenshotsReady);
+  // Extra headroom for canvas decode pipeline
+  await new Promise(r => setTimeout(r, 1500));
+  console.log('[ENGINE] Screenshots injected and decoded. Ready to render.');
 
   // ── PREVIEW STILLS MODE ──────────────────────
   if (isPreviewStills) {
