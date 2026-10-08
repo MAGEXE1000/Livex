@@ -212,10 +212,14 @@
           var path = window.location.pathname;
           if (path === '/app' || path.startsWith('/app/')) {
             document.documentElement.classList.add('app-route');
-            document.documentElement.classList.remove('landing-route');
+            document.documentElement.classList.remove('landing-route', 'privacy-route');
+          } else if (path === '/privacy' || path === '/privacy-policy') {
+            document.documentElement.classList.add('privacy-route');
+            document.documentElement.classList.remove('app-route', 'landing-route');
+            window.__introReturnedEarly = true;
           } else {
             document.documentElement.classList.add('landing-route');
-            document.documentElement.classList.remove('app-route');
+            document.documentElement.classList.remove('app-route', 'privacy-route');
             window.__introReturnedEarly = true;
           }
 
@@ -291,7 +295,8 @@
       }
 
       /* Hide orbit intro completely on landing page route */
-      html.landing-route #intro {
+      html.landing-route #intro,
+      html.privacy-route #intro {
         display: none !important;
       }
 

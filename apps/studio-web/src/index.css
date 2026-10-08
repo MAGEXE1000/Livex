@@ -280,3 +280,21 @@ html.light :not(.mockup-viewport):not(.mockup-viewport *) .hover\:border-zinc-80
 }
 
 /* Web-specific Light Mode Inline Color Hacks */
+
+/* ── Privacy Policy Page Scrolling & Selection ── */
+html.privacy-route {
+  height: auto !important;
+  min-height: 100% !important;
+  overflow: auto !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+html.privacy-route body,
+html.privacy-route #root {
+  height: auto !important;
+  min-height: 100% !important;
+  overflow: visible !important;
+  -webkit-user-select: text !important;
+  user-select: text !important;
+}

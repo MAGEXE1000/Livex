@@ -41,6 +41,8 @@ import {
   LivexLandingPage,
 } from '@workspace/ui-web';
 
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+
 import './index.css';
 
 
@@ -112,6 +114,9 @@ export default function App() {
       path.startsWith('/vocalex')
     )
       return '/app';
+    if (path === '/privacy' || path === '/privacy-policy') {
+      return '/privacy';
+    }
     return '/';
   });
 
@@ -142,6 +147,8 @@ export default function App() {
         path.startsWith('/vocalex')
       ) {
         setRoute('/app');
+      } else if (path === '/privacy' || path === '/privacy-policy') {
+        setRoute('/privacy');
       } else {
         setRoute('/');
       }
@@ -184,10 +191,23 @@ export default function App() {
   useEffect(() => {
     if (route === '/') {
       document.documentElement.classList.add('landing-route');
-      document.documentElement.classList.remove('app-route');
+      document.documentElement.classList.remove('app-route', 'privacy-route');
+    } else if (route === '/privacy') {
+      document.documentElement.classList.add('privacy-route');
+      document.documentElement.classList.remove('landing-route', 'app-route');
+
+      const intro = document.getElementById('intro');
+      if (intro) {
+        intro.style.display = 'none';
+        if (intro.parentNode) intro.parentNode.removeChild(intro);
+      }
+      (window as any).__introDone = true;
+      window.dispatchEvent(new Event('livex-intro-done'));
+      window.dispatchEvent(new Event('studio-intro-done'));
+      triggerIntroReveal();
     } else {
       document.documentElement.classList.add('app-route');
-      document.documentElement.classList.remove('landing-route');
+      document.documentElement.classList.remove('landing-route', 'privacy-route');
 
       const intro = document.getElementById('intro');
       if (intro) {
@@ -244,6 +264,10 @@ export default function App() {
 
   if (route === '/') {
     return <LivexLandingPage navigateTo={navigateTo} />;
+  }
+
+  if (route === '/privacy') {
+    return <PrivacyPolicyPage navigateTo={navigateTo} />;
   }
 
   return (

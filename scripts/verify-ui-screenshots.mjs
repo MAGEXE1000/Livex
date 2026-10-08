@@ -91,8 +91,12 @@ function checkServerListening(url, timeoutMs = 1500) {
   });
 }
 
-async function ensureDevServer() {
-  for (const port of [5174, 5173]) {
+async function ensureDevServer(targetApp) {
+  const isWeb = targetApp === 'web';
+  const targetPort = isWeb ? 5173 : 5174;
+  const portsToCheck = isWeb ? [5173] : [5174, 5173];
+
+  for (const port of portsToCheck) {
     const isUp =
       (await checkServerListening(`http://127.0.0.1:${port}/`, 800)) ||
       (await checkServerListening(`http://localhost:${port}/`, 800));
@@ -102,12 +106,13 @@ async function ensureDevServer() {
     }
   }
 
-  console.log('[DEV-SERVER] Starting Vite preview server on port 5174...');
-  const devProcess = spawn('cmd.exe', ['/c', 'pnpm.cmd --filter @workspace/studio-android dev --port 5174'], {
+  const pkgFilter = isWeb ? '@workspace/studio-web' : '@workspace/studio-android';
+  console.log(`[DEV-SERVER] Starting Vite server on port ${targetPort} (${pkgFilter})...`);
+  const devProcess = spawn('cmd.exe', ['/c', `pnpm.cmd --filter ${pkgFilter} dev --port ${targetPort}`], {
     cwd: REPO_ROOT,
     stdio: 'pipe',
     shell: false,
-    env: { ...process.env, PORT: '5174' },
+    env: { ...process.env, PORT: String(targetPort) },
   });
 
   devProcess.stdout.on('data', (d) => {
@@ -120,13 +125,13 @@ async function ensureDevServer() {
   const start = Date.now();
   while (Date.now() - start < 35000) {
     await sleep(1000);
-    if (await checkServerListening('http://127.0.0.1:5174/', 800)) {
-      console.log('[DEV-SERVER] Server ready on http://127.0.0.1:5174/');
-      return { port: 5174, process: devProcess };
+    if (await checkServerListening(`http://127.0.0.1:${targetPort}/`, 800)) {
+      console.log(`[DEV-SERVER] Server ready on http://127.0.0.1:${targetPort}/`);
+      return { port: targetPort, process: devProcess };
     }
   }
 
-  throw new Error('[DEV-SERVER] Timeout waiting for Vite server on port 5174');
+  throw new Error(`[DEV-SERVER] Timeout waiting for Vite server on port ${targetPort}`);
 }
 
 async function saveScreenshot(page, filename) {
@@ -160,25 +165,29 @@ function parseArgs() {
     }
   }
 
-  return { customFilename, targetApp, targetPage };
+  const isDesktop = args.includes('--desktop');
+  return { customFilename, targetApp, targetPage, isDesktop };
 }
 
 async function run() {
   const startTime = Date.now();
   console.log('========================================================================');
-  console.log('  LIVEX LIGHTWEIGHT HEADLESS UI VERIFICATION (PUPPETEER MOBILE 412x915) ');
+  console.log('  LIVEX LIGHTWEIGHT HEADLESS UI VERIFICATION (PUPPETEER MOBILE/DESKTOP) ');
   console.log('========================================================================');
 
-  const { customFilename, targetApp, targetPage } = parseArgs();
+  const { customFilename, targetApp, targetPage, isDesktop } = parseArgs();
   let serverInfo = null;
   let browser = null;
 
   try {
-    serverInfo = await ensureDevServer();
+    serverInfo = await ensureDevServer(targetApp);
     const port = serverInfo.port;
 
     const executablePath = getBrowserExecutablePath();
     console.log(`[BROWSER] Launching headless browser (binary: ${executablePath || 'bundled/system'})...`);
+
+    const winW = isDesktop ? 1280 : 412;
+    const winH = isDesktop ? 800 : 915;
 
     browser = await puppeteer.launch({
       executablePath,
@@ -187,20 +196,21 @@ async function run() {
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
-        '--window-size=412,915',
+        `--window-size=${winW},${winH}`,
       ],
     });
 
     const page = await browser.newPage();
     await page.setViewport({
-      width: 412,
-      height: 915,
+      width: winW,
+      height: winH,
       deviceScaleFactor: 2,
-      isMobile: true,
-      hasTouch: true,
+      isMobile: !isDesktop,
+      hasTouch: !isDesktop,
     });
 
-    const baseUrl = `http://127.0.0.1:${port}/`;
+    const initialPath = targetApp === 'web' && targetPage ? `/${targetPage.replace(/^\//, '')}` : '/';
+    const baseUrl = `http://127.0.0.1:${port}${initialPath}`;
     console.log(`[NAV] Loading ${baseUrl}...`);
     await page.goto(baseUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
     await sleep(2000);
@@ -220,7 +230,12 @@ async function run() {
     // If targeted custom screenshot requested
     if (customFilename) {
       console.log(`\n[TARGETED] Navigating to requested view...`);
-      if (targetApp) {
+      if (targetApp === 'web') {
+        const dest = targetPage ? `/${targetPage.replace(/^\//, '')}` : '/';
+        console.log(`[TARGETED] Direct web navigation to ${dest}...`);
+        await page.goto(`http://127.0.0.1:${port}${dest}`, { waitUntil: 'domcontentloaded', timeout: 30000 });
+        await sleep(1500);
+      } else if (targetApp) {
         await page.evaluate(({ app, page }) => {
           if (window.NavigationDispatcher) {
             window.NavigationDispatcher.reset([{ app: 'hub', tab: 'home' }]);

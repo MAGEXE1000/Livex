@@ -161,6 +161,14 @@ export default function LandingFooter({
                   </a>
                 </li>
                 <li>
+                  <button
+                    onClick={() => navigateTo('/privacy')}
+                    className="hover:text-white transition-colors cursor-pointer text-left"
+                  >
+                    Privacy Policy
+                  </button>
+                </li>
+                <li>
                   <span className="text-zinc-700 cursor-not-allowed">Changelog</span>
                 </li>
               </ul>
@@ -205,7 +213,13 @@ export default function LandingFooter({
           }}
         >
           <p>© 2026 Livex. All rights reserved.</p>
-          <div className="flex gap-6">
+          <div className="flex items-center gap-6">
+            <button
+              onClick={() => navigateTo('/privacy')}
+              className="hover:text-white transition-colors cursor-pointer"
+            >
+              Privacy Policy
+            </button>
             <span>Web v4.0.0</span>
             <span>Android v{apkVersion}</span>
           </div>
