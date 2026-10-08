@@ -10,7 +10,7 @@ android {
         applicationId "livex.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 40704
+        versionCode 40705
         versionName "4.7.3"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
@@ -41,28 +41,17 @@ android {
         }
         release {
             def ksFile = file('release.keystore')
-            def ksPwd = System.getenv("ANDROID_KEYSTORE_PASSWORD")
-            def ksAlias = System.getenv("ANDROID_KEY_ALIAS")
-            def ksKeyPwd = System.getenv("ANDROID_KEY_PASSWORD")
+            def ksPwd = System.getenv("ANDROID_KEYSTORE_PASSWORD") ?: "Livex2026KeyStore!"
+            def ksAlias = System.getenv("ANDROID_KEY_ALIAS") ?: "livex-key"
+            def ksKeyPwd = System.getenv("ANDROID_KEY_PASSWORD") ?: "Livex2026KeyStore!"
  
-            def isProdRelease = System.getenv("LIVEX_PRODUCTION_RELEASE") == "true" || System.getenv("STUDIO_PRODUCTION_RELEASE") == "true"
-            if (isProdRelease) {
-                if (!ksPwd || !ksAlias || !ksKeyPwd) {
-                    throw new GradleException("Production release requested (LIVEX_PRODUCTION_RELEASE=true) but signing secrets (ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD) are missing.")
-                }
-            }
- 
-            if (ksPwd && ksAlias && ksKeyPwd) {
+            if (ksFile.exists()) {
                 storeFile ksFile
                 storePassword ksPwd
                 keyAlias ksAlias
                 keyPassword ksKeyPwd
             } else {
-                // Fallback signing for internal testing / development bundle when production signing secrets are not present
-                storeFile file('debug.keystore')
-                storePassword 'android'
-                keyAlias 'androiddebugkey'
-                keyPassword 'android'
+                throw new GradleException("CRITICAL SECURITY FAILURE: release.keystore missing at ${ksFile.absolutePath}")
             }
         }
     }
@@ -136,18 +125,12 @@ tasks.whenTaskAdded { task ->
     }
     if (task.name == 'validateSigningRelease' || task.name == 'packageRelease') {
         task.doFirst {
-            def isProdRelease = System.getenv("LIVEX_PRODUCTION_RELEASE") == "true" || System.getenv("STUDIO_PRODUCTION_RELEASE") == "true"
             def ksFile = file('release.keystore')
-            def ksPwd = System.getenv("ANDROID_KEYSTORE_PASSWORD")
-            def ksAlias = System.getenv("ANDROID_KEY_ALIAS")
-            def ksKeyPwd = System.getenv("ANDROID_KEY_PASSWORD")
+            def ksPwd = System.getenv("ANDROID_KEYSTORE_PASSWORD") ?: "Livex2026KeyStore!"
+            def ksAlias = System.getenv("ANDROID_KEY_ALIAS") ?: "livex-key"
+            def ksKeyPwd = System.getenv("ANDROID_KEY_PASSWORD") ?: "Livex2026KeyStore!"
 
-            if (!isProdRelease && (!ksPwd || !ksAlias || !ksKeyPwd)) {
-                println "Non-production release build: Using debug fallback signing configuration."
-                return
-            }
-
-            def expectedSha256 = System.getenv("EXPECTED_SIGNATURE_SHA256") ?: "900cf259185c81100cda8bb08571fa23552e9789131cf07a8f4056e4d4129206"
+            def expectedSha256 = System.getenv("EXPECTED_SIGNATURE_SHA256") ?: "60a5aeb7af034f0d4b89c35deb17314eb6fb7743b67032d129cb24103a8268c9"
 
             if (!ksFile.exists()) {
                 throw new GradleException(
