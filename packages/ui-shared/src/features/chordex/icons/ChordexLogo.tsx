@@ -123,6 +123,8 @@ export function StagexLogoIcon({ size = 14 }: { size?: number }) {
   );
 }
 
+export const StagexLogo = StagexLogoIcon;
+
 export function GroovexLogo({ size = 14 }: { size?: number }) {
   return (
     <svg

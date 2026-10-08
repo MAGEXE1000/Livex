@@ -59,9 +59,9 @@
             } catch (_) {}
           }
 
-          // 3. Clean fallback default
+          // 3. Clean fallback default (start AMOLED black to avoid white flash)
           if (!theme) {
-            theme = 'light';
+            theme = 'amoled';
           }
 
           var isLight = (theme === 'light');

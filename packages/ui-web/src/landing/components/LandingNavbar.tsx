@@ -2,7 +2,7 @@ import { useLivexPreferences, useSettingsStore, settingsController } from '@work
 import { LivexLogo } from '@workspace/ui-shared';
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Sun, Moon, Sparkles, ArrowRight } from 'lucide-react';
+import { Sun, Moon, Sparkles, ArrowRight, ShieldCheck } from 'lucide-react';
 
 interface LandingNavbarProps {
   navigateTo: (path: string) => void;
@@ -28,18 +28,16 @@ export default function LandingNavbar({ navigateTo }: LandingNavbarProps) {
   };
 
   useEffect(() => {
-    const sectionIds = ['suite', 'showcase', 'features', 'downloads'];
+    const sectionIds = ['workstations', 'features', 'downloads'];
 
     const handleScroll = () => {
-      const scrollPos = window.scrollY + 200; // offset for navbar height
+      const scrollPos = window.scrollY + 200;
 
-      // If at the top of the page, highlight nothing
       if (window.scrollY < 100) {
         setActiveSection('');
         return;
       }
 
-      // Find current section
       let current = '';
       for (const id of sectionIds) {
         const el = document.getElementById(id);
@@ -53,7 +51,6 @@ export default function LandingNavbar({ navigateTo }: LandingNavbarProps) {
         }
       }
 
-      // If we are at the bottom of the page, default to downloads
       if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 50) {
         current = 'downloads';
       }
@@ -64,107 +61,115 @@ export default function LandingNavbar({ navigateTo }: LandingNavbarProps) {
     };
 
     window.addEventListener('scroll', handleScroll);
-    handleScroll(); // initial check
+    handleScroll();
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const navItems = [
-    { id: 'suite', label: 'Suite' },
-    { id: 'showcase', label: 'Showcase' },
-    { id: 'features', label: 'Features' },
-    { id: 'downloads', label: 'Downloads' },
-  ];
-
   return (
-    <header
-      className="sticky top-0 z-50 w-full border-b backdrop-blur-md transition-colors duration-200 landing-font-heading"
-      style={{
-        backgroundColor: 'var(--landing-nav-bg)',
-        borderColor: 'var(--landing-border)',
-      }}
-    >
-      <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between gap-4">
+    <header className="sticky top-0 z-50 w-full border-b border-white/10 backdrop-blur-md bg-black/60 transition-colors duration-200">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
         {/* Logo and Brand */}
-        <div className="flex items-center gap-2.5 flex-shrink-0">
-          <div className="flex-shrink-0" style={{ color: 'var(--landing-text-primary)' }}>
-            <LivexLogo size={28} />
+        <div
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          className="flex items-center gap-2.5 flex-shrink-0 cursor-pointer"
+        >
+          <div className="flex-shrink-0 text-white">
+            <LivexLogo size={26} />
           </div>
           <span
-            className="font-extrabold text-base tracking-tight"
-            style={{
-              fontFamily: 'var(--studio-font-display)',
-              letterSpacing: '-0.02em',
-              color: 'var(--landing-text-primary)',
-            }}
+            className="font-bold text-base tracking-tight text-white"
+            style={{ letterSpacing: '-0.02em' }}
           >
             Livex
           </span>
         </div>
 
         {/* Center Nav tabs */}
-        <nav
-          className="hidden md:flex items-center gap-1 text-xs font-semibold uppercase tracking-wider p-1 rounded-full relative border transition-colors"
-          style={{
-            backgroundColor: 'var(--landing-surface-subtle)',
-            borderColor: 'var(--landing-border)',
-            color: 'var(--landing-text-secondary)',
-          }}
-        >
-          {navItems.map((item) => {
-            const isActive = activeSection === item.id;
-            return (
-              <a
-                key={item.id}
-                href={`#${item.id}`}
-                onClick={(e) => handleScrollTo(e, item.id)}
-                className="relative px-4 py-1.5 rounded-full transition-colors duration-200"
-                style={{
-                  color: isActive ? 'var(--landing-text-primary)' : 'var(--landing-text-secondary)',
-                }}
-              >
-                {isActive && (
-                  <motion.span
-                    layoutId="activeLandingTab"
-                    className="absolute inset-0 rounded-full -z-10 shadow-sm"
-                    style={{
-                      backgroundColor: 'var(--landing-surface-card)',
-                      border: '1px solid var(--landing-border)',
-                    }}
-                    transition={
-                      isReduced ? { duration: 0 } : { type: 'spring', stiffness: 380, damping: 30 }
-                    }
-                  />
-                )}
-                {item.label}
-              </a>
-            );
-          })}
+        <nav className="hidden md:flex items-center gap-1 text-xs font-medium p-1 rounded-full relative border border-white/10 bg-white/[0.03]">
+          <a
+            href="#workstations"
+            onClick={(e) => handleScrollTo(e, 'workstations')}
+            className={`relative px-3.5 py-1.5 rounded-full transition-colors duration-200 ${
+              activeSection === 'workstations' ? 'text-white' : 'text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            {activeSection === 'workstations' && (
+              <motion.span
+                layoutId="activeLandingTab"
+                className="absolute inset-0 rounded-full -z-10 shadow-sm bg-white/10 border border-white/15"
+                transition={
+                  isReduced ? { duration: 0 } : { type: 'spring', stiffness: 380, damping: 30 }
+                }
+              />
+            )}
+            Workstations
+          </a>
+
+          <a
+            href="#features"
+            onClick={(e) => handleScrollTo(e, 'features')}
+            className={`relative px-3.5 py-1.5 rounded-full transition-colors duration-200 ${
+              activeSection === 'features' ? 'text-white' : 'text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            {activeSection === 'features' && (
+              <motion.span
+                layoutId="activeLandingTab"
+                className="absolute inset-0 rounded-full -z-10 shadow-sm bg-white/10 border border-white/15"
+                transition={
+                  isReduced ? { duration: 0 } : { type: 'spring', stiffness: 380, damping: 30 }
+                }
+              />
+            )}
+            Features
+          </a>
+
+          <a
+            href="#downloads"
+            onClick={(e) => handleScrollTo(e, 'downloads')}
+            className={`relative px-3.5 py-1.5 rounded-full transition-colors duration-200 ${
+              activeSection === 'downloads' ? 'text-white' : 'text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            {activeSection === 'downloads' && (
+              <motion.span
+                layoutId="activeLandingTab"
+                className="absolute inset-0 rounded-full -z-10 shadow-sm bg-white/10 border border-white/15"
+                transition={
+                  isReduced ? { duration: 0 } : { type: 'spring', stiffness: 380, damping: 30 }
+                }
+              />
+            )}
+            Platforms
+          </a>
+
+          {/* Explicit Privacy Policy Navigation */}
+          <button
+            type="button"
+            onClick={() => navigateTo('/privacy')}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-zinc-400 hover:text-white transition-colors cursor-pointer"
+          >
+            <ShieldCheck className="w-3.5 h-3.5 text-zinc-500" />
+            <span>Privacy</span>
+          </button>
         </nav>
 
-        {/* Right: Theme Switcher & Use Web CTA */}
+        {/* Right: Theme Switcher & Open App Action */}
         <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
           {/* Segmented Theme Switcher */}
-          <div
-            className="flex items-center p-1 rounded-full border transition-colors"
-            style={{
-              backgroundColor: 'var(--landing-surface-subtle)',
-              borderColor: 'var(--landing-border)',
-            }}
-          >
+          <div className="flex items-center p-0.5 rounded-full border border-white/10 bg-white/[0.03]">
             <button
               type="button"
               onClick={() => settingsController.setThemeMode('light')}
               title="Light theme"
               aria-label="Light theme"
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all duration-150 cursor-pointer"
+              className="flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-medium transition-all duration-150 cursor-pointer"
               style={{
-                backgroundColor: currentMode === 'light' ? 'var(--landing-surface-card)' : 'transparent',
-                color: currentMode === 'light' ? 'var(--landing-text-primary)' : 'var(--landing-text-muted)',
-                boxShadow: currentMode === 'light' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                backgroundColor: currentMode === 'light' ? 'rgba(255,255,255,0.15)' : 'transparent',
+                color: currentMode === 'light' ? '#ffffff' : '#71717a',
               }}
             >
               <Sun className="w-3.5 h-3.5" />
-              <span className="hidden lg:inline text-[10px]">Light</span>
             </button>
 
             <button
@@ -172,15 +177,13 @@ export default function LandingNavbar({ navigateTo }: LandingNavbarProps) {
               onClick={() => settingsController.setThemeMode('dark')}
               title="Dark theme"
               aria-label="Dark theme"
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all duration-150 cursor-pointer"
+              className="flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-medium transition-all duration-150 cursor-pointer"
               style={{
-                backgroundColor: currentMode === 'dark' ? 'var(--landing-surface-card)' : 'transparent',
-                color: currentMode === 'dark' ? 'var(--landing-text-primary)' : 'var(--landing-text-muted)',
-                boxShadow: currentMode === 'dark' ? '0 1px 3px rgba(0,0,0,0.2)' : 'none',
+                backgroundColor: currentMode === 'dark' ? 'rgba(255,255,255,0.15)' : 'transparent',
+                color: currentMode === 'dark' ? '#ffffff' : '#71717a',
               }}
             >
               <Moon className="w-3.5 h-3.5" />
-              <span className="hidden lg:inline text-[10px]">Dark</span>
             </button>
 
             <button
@@ -188,15 +191,13 @@ export default function LandingNavbar({ navigateTo }: LandingNavbarProps) {
               onClick={() => settingsController.setThemeMode('amoled')}
               title="AMOLED theme"
               aria-label="AMOLED theme"
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all duration-150 cursor-pointer"
+              className="flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-medium transition-all duration-150 cursor-pointer"
               style={{
-                backgroundColor: currentMode === 'amoled' ? 'var(--landing-surface-card)' : 'transparent',
-                color: currentMode === 'amoled' ? 'var(--landing-text-primary)' : 'var(--landing-text-muted)',
-                boxShadow: currentMode === 'amoled' ? '0 1px 3px rgba(0,0,0,0.3)' : 'none',
+                backgroundColor: currentMode === 'amoled' ? 'rgba(255,255,255,0.15)' : 'transparent',
+                color: currentMode === 'amoled' ? '#ffffff' : '#71717a',
               }}
             >
               <Sparkles className="w-3.5 h-3.5" />
-              <span className="hidden lg:inline text-[10px]">AMOLED</span>
             </button>
           </div>
 
@@ -207,14 +208,9 @@ export default function LandingNavbar({ navigateTo }: LandingNavbarProps) {
               sessionStorage.setItem('livex:entered_from_landing', 'true');
               navigateTo('/app');
             }}
-            className="h-9 px-3.5 sm:px-4 rounded-full text-[11px] uppercase font-bold tracking-wider transition-all duration-200 flex items-center gap-1.5 active:scale-95 shadow-sm cursor-pointer"
-            style={{
-              backgroundColor: 'var(--landing-cta-bg)',
-              color: 'var(--landing-cta-text)',
-            }}
+            className="h-8 sm:h-9 px-3.5 sm:px-4 rounded-xl text-xs font-semibold tracking-tight transition-all duration-200 flex items-center gap-1.5 active:scale-95 bg-white text-black hover:bg-zinc-100 shadow-sm cursor-pointer"
           >
-            <span className="hidden sm:inline">Use Web</span>
-            <span className="sm:hidden">Web</span>
+            <span>Open App</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>

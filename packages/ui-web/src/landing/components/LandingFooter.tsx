@@ -1,6 +1,7 @@
 import { APP_VERSION_LABEL } from '@workspace/livex-core';
 import { LivexLogo } from '@workspace/ui-shared';
 import React from 'react';
+import { ShieldCheck, ExternalLink } from 'lucide-react';
 
 interface LandingFooterProps {
   navigateTo: (path: string) => void;
@@ -25,98 +26,84 @@ export default function LandingFooter({
   };
 
   return (
-    <footer
-      className="border-t py-16 relative overflow-hidden select-none transition-colors duration-200"
-      style={{
-        backgroundColor: 'var(--landing-surface-subtle)',
-        borderColor: 'var(--landing-border)',
-      }}
-    >
-      <div className="max-w-7xl mx-auto px-6">
+    <footer className="border-t border-white/10 py-16 bg-[#050505] relative overflow-hidden select-none transition-colors duration-200">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-10 items-start mb-16">
+          {/* Brand Info */}
           <div className="md:col-span-5 space-y-4">
-            <div className="flex items-center gap-2">
-              <div className="flex-shrink-0" style={{ color: 'var(--landing-text-primary)' }}>
+            <div className="flex items-center gap-2.5">
+              <div className="flex-shrink-0 text-white">
                 <LivexLogo size={28} />
               </div>
               <span
-                className="font-extrabold text-base tracking-tight"
-                style={{
-                  fontFamily: 'var(--studio-font-display)',
-                  letterSpacing: '-0.02em',
-                  color: 'var(--landing-text-primary)',
-                }}
+                className="font-bold text-base tracking-tight text-white"
+                style={{ letterSpacing: '-0.02em' }}
               >
                 Livex
               </span>
             </div>
-            <p
-              className="text-[11px] leading-relaxed max-w-sm landing-font-body"
-              style={{ color: 'var(--landing-text-muted)' }}
-            >
-              Livex is a specialized, integrated single-page application containing tools for
-              guitarists, drummers, audio engineers, vocalists, and music directors. Built for live
-              setups.
+            <p className="text-xs leading-relaxed max-w-sm text-zinc-400">
+              Livex is an integrated, low-latency performance and rehearsal suite designed for
+              guitarists, drummers, audio engineers, vocalists, and music directors.
+              Built for production stages and real rehearsal environments.
             </p>
           </div>
 
+          {/* Links Grid */}
           <div className="md:col-span-7 grid grid-cols-3 gap-6">
             <div>
-              <h4
-                className="text-[10px] font-extrabold uppercase tracking-widest mb-4 landing-font-heading"
-                style={{ color: 'var(--landing-text-primary)' }}
-              >
-                Suite Tools
+              <h4 className="text-xs font-semibold text-white tracking-tight mb-4">
+                Workstations
               </h4>
-              <ul className="space-y-2 text-xs text-zinc-500 font-semibold uppercase tracking-wider landing-font-heading">
+              <ul className="space-y-2.5 text-xs text-zinc-400">
                 <li>
                   <button
-                    onClick={(e) => handleScrollTo(e, 'suite')}
-                    className="hover:text-white transition-colors"
+                    onClick={(e) => handleScrollTo(e, 'workstations')}
+                    className="hover:text-white transition-colors cursor-pointer"
                   >
-                    Chordex
+                    Groovex (Stems)
                   </button>
                 </li>
                 <li>
                   <button
-                    onClick={(e) => handleScrollTo(e, 'suite')}
-                    className="hover:text-white transition-colors"
+                    onClick={(e) => handleScrollTo(e, 'workstations')}
+                    className="hover:text-white transition-colors cursor-pointer"
                   >
-                    Stagex
+                    Chordex (Prompter)
                   </button>
                 </li>
                 <li>
                   <button
-                    onClick={(e) => handleScrollTo(e, 'suite')}
-                    className="hover:text-white transition-colors"
+                    onClick={(e) => handleScrollTo(e, 'workstations')}
+                    className="hover:text-white transition-colors cursor-pointer"
                   >
-                    Groovex
+                    Drumex (Sequencer)
                   </button>
                 </li>
                 <li>
                   <button
-                    onClick={(e) => handleScrollTo(e, 'suite')}
-                    className="hover:text-white transition-colors"
+                    onClick={(e) => handleScrollTo(e, 'workstations')}
+                    className="hover:text-white transition-colors cursor-pointer"
                   >
-                    Drumex
+                    Vocalex (Pitch)
                   </button>
                 </li>
                 <li>
                   <button
-                    onClick={(e) => handleScrollTo(e, 'suite')}
-                    className="hover:text-white transition-colors"
+                    onClick={(e) => handleScrollTo(e, 'workstations')}
+                    className="hover:text-white transition-colors cursor-pointer"
                   >
-                    Vocalex
+                    Stagex (Spatial Plot)
                   </button>
                 </li>
               </ul>
             </div>
 
             <div>
-              <h4 className="text-[10px] font-extrabold uppercase tracking-widest text-zinc-400 mb-4 landing-font-heading">
+              <h4 className="text-xs font-semibold text-white tracking-tight mb-4">
                 Platforms
               </h4>
-              <ul className="space-y-2 text-xs text-zinc-500 font-semibold uppercase tracking-wider landing-font-heading">
+              <ul className="space-y-2.5 text-xs text-zinc-400">
                 <li>
                   <button
                     onClick={() => navigateTo('/app')}
@@ -134,91 +121,71 @@ export default function LandingFooter({
                     <span className="text-zinc-600">Android APK</span>
                   )}
                 </li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="text-[10px] font-extrabold uppercase tracking-widest text-zinc-400 mb-4 landing-font-heading">
-                Resources
-              </h4>
-              <ul className="space-y-2 text-xs text-zinc-500 font-semibold uppercase tracking-wider landing-font-heading">
-                <li>
-                  <a
-                    href="#suite"
-                    onClick={(e) => handleScrollTo(e, 'suite')}
-                    className="hover:text-white transition-colors"
-                  >
-                    Features
-                  </a>
-                </li>
                 <li>
                   <a
                     href="#downloads"
                     onClick={(e) => handleScrollTo(e, 'downloads')}
-                    className="hover:text-white transition-colors"
+                    className="hover:text-white transition-colors cursor-pointer"
                   >
-                    Downloads
+                    All Downloads
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="text-xs font-semibold text-white tracking-tight mb-4">
+                Resources
+              </h4>
+              <ul className="space-y-2.5 text-xs text-zinc-400">
+                <li>
+                  <a
+                    href="#features"
+                    onClick={(e) => handleScrollTo(e, 'features')}
+                    className="hover:text-white transition-colors cursor-pointer"
+                  >
+                    Core Features
                   </a>
                 </li>
                 <li>
                   <button
                     onClick={() => navigateTo('/privacy')}
-                    className="hover:text-white transition-colors cursor-pointer text-left"
+                    className="text-white hover:underline flex items-center gap-1.5 transition-colors cursor-pointer font-medium"
                   >
-                    Privacy Policy
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Privacy Policy</span>
                   </button>
                 </li>
                 <li>
-                  <span className="text-zinc-700 cursor-not-allowed">Changelog</span>
+                  <span className="text-zinc-600">Release Notes</span>
                 </li>
               </ul>
             </div>
           </div>
         </div>
 
-        <div
-          className="border-t pt-8 pb-8 text-[11px] leading-relaxed landing-font-body space-y-2"
-          style={{
-            borderColor: 'var(--landing-border)',
-            color: 'var(--landing-text-muted)',
-          }}
-        >
-          <h5
-            className="text-[10px] font-extrabold uppercase tracking-widest mb-3 landing-font-heading"
-            style={{ color: 'var(--landing-text-primary)' }}
-          >
-            Licenses & Rights
-          </h5>
+        {/* Legal & Rights */}
+        <div className="border-t border-white/10 pt-8 pb-8 text-xs leading-relaxed text-zinc-400 space-y-2">
+          <h5 className="font-semibold text-white mb-2">Licenses & Rights</h5>
           <p>
-            Livex is distributed as a web application and Android APK for personal and project use.
-            All Livex interface design, product names, app modules, and original assets are part of
-            the Livex project unless otherwise noted.
-          </p>
-          <p>Third-party libraries remain under their respective licenses.</p>
-          <p>
-            Music titles, artist names, and example song references shown in mockups are used only
-            as interface examples.
+            Livex is distributed as a progressive web application and Android APK for musicians and audio professionals.
+            All Livex interface designs, trademarks, workstation modules, and original algorithms are part of the Livex project.
           </p>
           <p>
-            Livex does not include or distribute copyrighted songs, lyrics, or audio recordings.
+            Third-party DSP libraries and audio decoders remain under their respective licenses.
+            Livex does not distribute copyrighted master audio recordings or lyrics.
           </p>
-          <p>License details will be published with the public release.</p>
         </div>
 
-        <div
-          className="border-t pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-[10px] uppercase font-bold tracking-wider landing-font-heading"
-          style={{
-            borderColor: 'var(--landing-border)',
-            color: 'var(--landing-text-muted)',
-          }}
-        >
+        {/* Bottom Bar */}
+        <div className="border-t border-white/10 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-zinc-400">
           <p>© 2026 Livex. All rights reserved.</p>
           <div className="flex items-center gap-6">
             <button
               onClick={() => navigateTo('/privacy')}
-              className="hover:text-white transition-colors cursor-pointer"
+              className="text-zinc-300 hover:text-white transition-colors cursor-pointer font-medium flex items-center gap-1"
             >
-              Privacy Policy
+              <span>Privacy Policy</span>
             </button>
             <span>Web v4.0.0</span>
             <span>Android v{apkVersion}</span>

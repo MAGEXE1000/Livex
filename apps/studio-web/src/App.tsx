@@ -190,8 +190,8 @@ export default function App() {
 
   useEffect(() => {
     if (route === '/') {
-      document.documentElement.classList.add('landing-route');
-      document.documentElement.classList.remove('app-route', 'privacy-route');
+      document.documentElement.classList.add('landing-route', 'dark', 'amoled');
+      document.documentElement.classList.remove('app-route', 'privacy-route', 'light');
     } else if (route === '/privacy') {
       document.documentElement.classList.add('privacy-route');
       document.documentElement.classList.remove('landing-route', 'app-route');

@@ -1,108 +1,12 @@
-import { useLivexPreferences, useStudioPreferences } from '@workspace/livex-core';
-import React, { useState, useEffect, useCallback } from 'react';
-import { ArrowRight, Download } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
-import LandingLinkPreview from './LandingLinkPreview';
+import React from 'react';
+import { ArrowRight, Download, ShieldCheck, Zap, Layers, Sparkles } from 'lucide-react';
+import { motion } from 'motion/react';
+import { useLivexPreferences } from '@workspace/livex-core';
+import FluidBadge from './FluidBadge';
 
 interface LandingHeroProps {
   navigateTo: (path: string) => void;
   apkUrl?: string;
-}
-
-function FlipWords({
-  words,
-  duration = 3000,
-  className,
-  isReduced = false,
-}: {
-  words: string[];
-  duration?: number;
-  className?: string;
-  isReduced?: boolean;
-}) {
-  const [currentWord, setCurrentWord] = useState(words[0]);
-  const [isAnimating, setIsAnimating] = useState(false);
-
-  const longestWord = React.useMemo(() => {
-    const getWeight = (word: string) => {
-      return word.split('').reduce((sum, char) => {
-        const c = char.toLowerCase();
-        if (c === 'w' || c === 'm') return sum + 1.4;
-        if (c === 'o' || c === 'd' || c === 'g' || c === 'p' || c === 'q' || c === 'b' || c === 'u')
-          return sum + 1.1;
-        if (c === 'i' || c === 'l' || c === 't' || c === 'f' || c === 'j') return sum + 0.5;
-        return sum + 0.9;
-      }, 0);
-    };
-    return words.reduce((best, current) => {
-      return getWeight(current) > getWeight(best) ? current : best;
-    }, words[0]);
-  }, [words]);
-
-  const startAnimation = useCallback(() => {
-    const word = words[words.indexOf(currentWord) + 1] || words[0];
-    setCurrentWord(word);
-    setIsAnimating(true);
-  }, [currentWord, words]);
-
-  useEffect(() => {
-    if (isReduced || isAnimating) {
-      return undefined;
-    }
-    const timer = setTimeout(() => {
-      startAnimation();
-    }, duration);
-    return () => clearTimeout(timer);
-  }, [isAnimating, duration, startAnimation, isReduced]);
-
-  if (isReduced) {
-    return <span className={className}>{currentWord}</span>;
-  }
-
-  return (
-    <span className="inline-block relative text-center">
-      <span
-        className={`${className} invisible select-none pointer-events-none`}
-        style={{ display: 'inline-block' }}
-      >
-        {longestWord}
-      </span>
-      <span className="absolute inset-0 flex items-center justify-center">
-        <AnimatePresence
-          onExitComplete={() => {
-            setIsAnimating(false);
-          }}
-        >
-          <motion.span
-            initial={{
-              opacity: 0,
-              y: 10,
-            }}
-            animate={{
-              opacity: 1,
-              y: 0,
-            }}
-            exit={{
-              opacity: 0,
-              y: -10,
-              position: 'absolute',
-              left: 0,
-              right: 0,
-            }}
-            transition={{
-              duration: 0.4,
-              ease: [0.16, 1, 0.3, 1],
-            }}
-            className={className}
-            style={{ display: 'inline-block', whiteSpace: 'nowrap', textAlign: 'center' }}
-            key={currentWord}
-          >
-            {currentWord}
-          </motion.span>
-        </AnimatePresence>
-      </span>
-    </span>
-  );
 }
 
 export default function LandingHero({ navigateTo, apkUrl }: LandingHeroProps) {
@@ -121,28 +25,23 @@ export default function LandingHero({ navigateTo, apkUrl }: LandingHeroProps) {
   const itemVariants = {
     hidden: {
       opacity: 0,
-      y: isReduced ? 0 : 20,
+      y: isReduced ? 0 : 16,
     },
     visible: {
       opacity: 1,
       y: 0,
       transition: {
-        duration: isReduced ? 0 : 0.65,
+        duration: isReduced ? 0 : 0.55,
         ease: [0.16, 1, 0.3, 1] as [number, number, number, number],
       },
     },
   };
 
   return (
-    <section
-      className="relative pt-24 pb-20 px-6 overflow-hidden select-none transition-colors duration-200"
-      style={{ backgroundColor: 'var(--landing-bg)' }}
-    >
-      {/* Premium Minimal Grid Overlay */}
-      <div className="absolute inset-0 bg-grid-pattern opacity-[0.03] pointer-events-none" />
-
-      {/* Subtle Minimal Glow */}
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[300px] rounded-full bg-zinc-500/[0.03] blur-[100px] pointer-events-none" />
+    <section className="relative pt-24 sm:pt-32 pb-16 sm:pb-24 px-4 sm:px-6 lg:px-8 overflow-hidden select-none">
+      {/* Ambient background glows */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[350px] rounded-full bg-gradient-to-b from-sky-500/10 via-purple-500/5 to-transparent blur-[120px] pointer-events-none" />
+      <div className="absolute inset-0 bg-[radial-gradient(#ffffff0a_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none opacity-40" />
 
       <motion.div
         variants={containerVariants}
@@ -150,111 +49,101 @@ export default function LandingHero({ navigateTo, apkUrl }: LandingHeroProps) {
         animate="visible"
         className="max-w-4xl mx-auto text-center relative z-10"
       >
-        {/* Upper Brand tag */}
-        <motion.div
-          variants={itemVariants}
-          className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-[10px] uppercase tracking-widest font-bold mb-8 select-none landing-font-heading"
-          style={{
-            backgroundColor: 'var(--landing-surface-subtle)',
-            borderColor: 'var(--landing-border)',
-            color: 'var(--landing-text-secondary)',
-          }}
-        >
-          <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-          Livex Platform Suite v4.0
+        {/* Status / Category Badge */}
+        <motion.div variants={itemVariants} className="inline-flex items-center mb-6">
+          <FluidBadge variant="accent" pulse>
+            Livex Platform Suite • Next-Gen Audio Workspace
+          </FluidBadge>
         </motion.div>
 
-        {/* Headline */}
+        {/* High-Impact Title Case Headline */}
         <motion.h1
           variants={itemVariants}
-          className="text-4xl md:text-6xl lg:text-7xl font-extrabold tracking-tight mb-6 leading-[1.08] uppercase landing-font-heading"
-          style={{ color: 'var(--landing-text-primary)' }}
+          className="text-4xl sm:text-6xl md:text-7xl font-bold tracking-tight text-white leading-[1.06] mb-6"
+          style={{ letterSpacing: '-0.025em' }}
         >
-          Your music workflow, <br />
-          <span style={{ color: 'var(--landing-text-muted)' }}>
-            in one{' '}
-            <FlipWords
-              words={[
-                'focused',
-                'unified',
-                'creative',
-                'seamless',
-                'powerful',
-                'polished',
-                'flexible',
-                'complete',
-                'elevated',
-                'modern',
-              ]}
-              isReduced={isReduced}
-              className="font-extrabold"
-            />{' '}
-            workspace.
+          The Rehearsal & Live
+          <br />
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-zinc-200 to-zinc-400">
+            Performance Engine.
           </span>
         </motion.h1>
 
-        {/* Subtitle */}
+        {/* Value Subtitle */}
         <motion.p
           variants={itemVariants}
-          className="max-w-xl mx-auto text-sm md:text-base leading-relaxed mb-10 landing-font-body"
-          style={{ color: 'var(--landing-text-secondary)' }}
+          className="max-w-2xl mx-auto text-base sm:text-lg leading-relaxed text-zinc-400 mb-10 font-normal"
         >
-          Livex brings songs, chords, stage planning, groove practice, and vocal tools into a
-          single cross-platform workspace. Built for instant performance.
+          Low-latency multitrack stem isolation, dynamic chord teleprompting, polyphonic beat sequencing,
+          sub-cent vocal calibration, and synchronized stage plots in one unified workstation.
         </motion.p>
 
-        {/* Buttons */}
+        {/* CTA Cluster */}
         <motion.div
           variants={itemVariants}
-          className="flex flex-col sm:flex-row items-center justify-center gap-3 max-w-2xl mx-auto landing-font-heading"
+          className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 max-w-xl mx-auto"
         >
-          <LandingLinkPreview
-            src="/desktop_hub.png"
-            isReduced={isReduced}
-            className="w-full sm:w-auto"
+          {/* Primary Action with Sheen Highlight */}
+          <button
+            onClick={() => {
+              sessionStorage.setItem('livex:entered_from_landing', 'true');
+              navigateTo('/app');
+            }}
+            className="group relative w-full sm:w-auto px-7 h-12 rounded-xl bg-white text-black font-semibold text-xs tracking-tight flex items-center justify-center gap-2 overflow-hidden shadow-[0_0_24px_rgba(255,255,255,0.18)] hover:shadow-[0_0_32px_rgba(255,255,255,0.28)] transition-all duration-200 active:scale-[0.98] cursor-pointer"
           >
-            <button
-              onClick={() => {
-                sessionStorage.setItem('livex:entered_from_landing', 'true');
-                navigateTo('/app');
-              }}
-              className="w-full sm:w-[180px] h-12 text-xs uppercase tracking-wider font-bold rounded-xl border border-transparent flex items-center justify-center gap-2 transition-all duration-200 active:scale-[0.98] shadow-md cursor-pointer"
-              style={{
-                backgroundColor: 'var(--landing-cta-bg)',
-                color: 'var(--landing-cta-text)',
-              }}
-            >
-              Use Livex Web
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          </LandingLinkPreview>
+            {/* Subtle Sheen Highlight animation */}
+            <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full duration-1000 bg-gradient-to-r from-transparent via-black/10 to-transparent transition-transform" />
+            <span className="relative z-10">Open Web Workstation</span>
+            <ArrowRight className="w-3.5 h-3.5 relative z-10 transition-transform group-hover:translate-x-0.5" />
+          </button>
 
+          {/* Secondary Action: Download Android APK */}
           {apkUrl ? (
             <a
               href={apkUrl}
-              className="w-full sm:w-[180px] h-12 text-xs uppercase tracking-wider font-bold rounded-xl border flex items-center justify-center gap-2 transition-all duration-200 shadow-sm cursor-pointer"
-              style={{
-                backgroundColor: 'var(--landing-secondary-btn-bg)',
-                color: 'var(--landing-secondary-btn-text)',
-                borderColor: 'var(--landing-secondary-btn-border)',
-              }}
+              className="w-full sm:w-auto px-6 h-12 rounded-xl bg-zinc-900 hover:bg-zinc-800/80 text-white font-medium text-xs tracking-tight border border-white/10 hover:border-white/20 flex items-center justify-center gap-2 transition-all duration-200 shadow-sm cursor-pointer"
             >
-              <Download className="w-3.5 h-3.5" style={{ color: 'var(--landing-text-secondary)' }} />
-              Download APK
+              <Download className="w-3.5 h-3.5 text-zinc-400" />
+              <span>Download Android APK</span>
             </a>
           ) : (
             <button
               disabled
-              className="w-full sm:w-[180px] h-12 text-xs uppercase tracking-wider font-bold rounded-xl border cursor-not-allowed flex items-center justify-center gap-2 opacity-50"
-              style={{
-                backgroundColor: 'var(--landing-surface-subtle)',
-                color: 'var(--landing-text-muted)',
-                borderColor: 'var(--landing-border)',
-              }}
+              className="w-full sm:w-auto px-6 h-12 rounded-xl bg-zinc-900/50 text-zinc-500 font-medium text-xs tracking-tight border border-white/5 flex items-center justify-center gap-2 cursor-not-allowed opacity-60"
             >
-              APK Unavailable
+              <Download className="w-3.5 h-3.5" />
+              <span>APK Packaging</span>
             </button>
           )}
+
+          {/* Direct Link to Privacy Policy */}
+          <button
+            onClick={() => navigateTo('/privacy')}
+            className="w-full sm:w-auto px-4 h-12 rounded-xl text-xs font-medium text-zinc-400 hover:text-white flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+          >
+            <ShieldCheck className="w-3.5 h-3.5 text-zinc-500" />
+            <span>Privacy Policy</span>
+            <span className="text-zinc-600">→</span>
+          </button>
+        </motion.div>
+
+        {/* Feature Badges Under CTA */}
+        <motion.div
+          variants={itemVariants}
+          className="mt-12 pt-8 border-t border-white/5 flex flex-wrap items-center justify-center gap-6 text-xs text-zinc-400"
+        >
+          <div className="flex items-center gap-2">
+            <Zap className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Web Audio & WASM Engine</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Layers className="w-3.5 h-3.5 text-sky-400" />
+            <span>5 Specialized Workstations</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+            <span>Zero Cloud Lock-in</span>
+          </div>
         </motion.div>
       </motion.div>
     </section>

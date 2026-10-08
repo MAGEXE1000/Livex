@@ -1,14 +1,11 @@
-import { useLivexPreferences, useStudioPreferences } from '@workspace/livex-core';
+import { useStudioPreferences } from '@workspace/livex-core';
 import { LivexLogo } from '@workspace/ui-shared';
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import LandingNavbar from './components/LandingNavbar';
 import LandingHero from './components/LandingHero';
-import LandingAppSuite from './components/LandingAppSuite';
+import LandingWorkstationShowcase from './components/LandingWorkstationShowcase';
 import LandingFeatureGrid from './components/LandingFeatureGrid';
-import LandingContainerScroll from './components/LandingContainerScroll';
-import LandingMacbookScroll from './components/LandingMacbookScroll';
-import Landing3DMarquee from './components/Landing3DMarquee';
 import LandingDownloads from './components/LandingDownloads';
 import LandingFooter from './components/LandingFooter';
 
@@ -97,20 +94,20 @@ export default function LivexLandingPage({ navigateTo }: LivexLandingPageProps) 
       })
       .then((data) => {
         setRelease({
-          version: data.version || data.versionName || '3.6.28',
+          version: data.version || data.versionName || '3.7.8',
           apkUrl:
             data.apkUrl ||
             data.download_url ||
-            'https://github.com/MAGEXE1000/Livex/releases/download/v3.6.28/studio-3.6.28.apk',
+            'https://github.com/MAGEXE1000/Livex/releases/download/v3.7.8/studio-3.7.8.apk',
           apkSizeBytes: data.apkSizeBytes || 14125258,
         });
         setLoadingRelease(false);
       })
-      .catch((err) => {
+      .catch(() => {
         setRelease({
-          version: '3.6.28',
+          version: '3.7.8',
           apkUrl:
-            'https://github.com/MAGEXE1000/Livex/releases/download/v3.6.28/studio-3.6.28.apk',
+            'https://github.com/MAGEXE1000/Livex/releases/download/v3.7.8/studio-3.7.8.apk',
           apkSizeBytes: 14125258,
         });
         setLoadingRelease(false);
@@ -144,7 +141,7 @@ export default function LivexLandingPage({ navigateTo }: LivexLandingPageProps) 
                 initial={{ opacity: 0, y: 4 }}
                 animate={introStep !== 'logo-out' ? { opacity: 0.6, y: 0 } : { opacity: 0, y: -2 }}
                 transition={{ delay: 0.2, duration: 0.4 }}
-                className="text-xs uppercase tracking-[0.2em] font-bold text-zinc-400 select-none landing-font-heading"
+                className="text-xs uppercase tracking-[0.2em] font-semibold text-zinc-400 select-none font-mono"
               >
                 Livex
               </motion.span>
@@ -157,50 +154,16 @@ export default function LivexLandingPage({ navigateTo }: LivexLandingPageProps) 
         initial={showIntro ? { opacity: 0 } : { opacity: 1 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-        className="min-h-screen font-sans selection:bg-zinc-500/30 overflow-x-hidden transition-colors duration-200"
-        style={{
-          backgroundColor: 'var(--landing-bg)',
-          color: 'var(--landing-text-primary)',
-        }}
+        className="min-h-screen font-sans selection:bg-zinc-500/30 overflow-x-hidden bg-black text-white"
       >
-        {/* Navbar */}
+        {/* Navbar with glass translucency & direct Privacy Policy link */}
         <LandingNavbar navigateTo={navigateTo} />
 
-        {/* Hero Section */}
+        {/* Hero Section with high-impact title case and CTA sheen */}
         <LandingHero navigateTo={navigateTo} apkUrl={release?.apkUrl} />
 
-        {/* MacBook Scroll Showcase */}
-        <section
-          id="showcase"
-          className="py-12 border-t transition-colors duration-200"
-          style={{
-            backgroundColor: 'var(--landing-bg)',
-            borderColor: 'var(--landing-border)',
-          }}
-        >
-          <div className="max-w-4xl mx-auto px-6 text-center mb-4">
-            <h2
-              className="text-xl md:text-3xl font-extrabold tracking-tight uppercase select-none landing-font-heading"
-              style={{ color: 'var(--landing-text-primary)' }}
-            >
-              A Live Music Suite in Your Hands
-            </h2>
-          </div>
-          <LandingMacbookScroll mockupName="chordLib" />
-        </section>
-
-        {/* App Bento Suite */}
-        <LandingAppSuite />
-
-        {/* Container Scroll Section */}
-        <LandingContainerScroll
-          titleText="From songs to stage-ready workflows."
-          descriptionText="Start with songs and chords, plan your live setup, then practice with groove and vocal tools without leaving Livex."
-          mockupName="stage"
-        />
-
-        {/* 3D Marquee Showcases */}
-        <Landing3DMarquee />
+        {/* Interactive Workstations Showcase (Groovex, Chordex, Drumex, Vocalex, Stagex) */}
+        <LandingWorkstationShowcase />
 
         {/* Core Technical Grid */}
         <LandingFeatureGrid />
@@ -214,7 +177,7 @@ export default function LivexLandingPage({ navigateTo }: LivexLandingPageProps) 
           loadingRelease={loadingRelease}
         />
 
-        {/* Footer */}
+        {/* Footer with prominent Privacy Policy */}
         <LandingFooter
           navigateTo={navigateTo}
           apkUrl={release?.apkUrl}
