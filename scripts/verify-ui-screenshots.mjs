@@ -248,11 +248,18 @@ async function run() {
         console.log(`[TARGETED] Direct web navigation to ${dest}...`);
         await page.goto(`http://127.0.0.1:${port}${dest}`, { waitUntil: 'domcontentloaded', timeout: 30000 });
         await sleep(1500);
-        if (customFilename.includes('features') || customFilename.includes('showcase')) {
-          await page.evaluate(() => {
-            const el = document.getElementById('workstations') || document.getElementById('features');
+        if (customFilename.includes('features') || customFilename.includes('showcase') || customFilename.includes('bento')) {
+          await page.evaluate((fname) => {
+            let el = null;
+            if (fname.includes('bento')) {
+              el = document.getElementById('bento');
+            } else if (fname.includes('showcase')) {
+              el = document.getElementById('showcase');
+            } else {
+              el = document.getElementById('bento') || document.getElementById('showcase') || document.getElementById('features') || document.getElementById('workstations');
+            }
             if (el) el.scrollIntoView({ behavior: 'instant', block: 'start' });
-          });
+          }, customFilename);
           await sleep(1000);
         }
       } else if (targetApp) {

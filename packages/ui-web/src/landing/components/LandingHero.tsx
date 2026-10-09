@@ -1,150 +1,106 @@
 import React from 'react';
-import { ArrowRight, Download, ShieldCheck } from 'lucide-react';
-import { motion } from 'motion/react';
-import { useLivexPreferences } from '@workspace/livex-core';
+import { ArrowUpRight, Download, Terminal, ShieldCheck, Sparkles } from 'lucide-react';
+import TextMorph from './TextMorph';
+import TextReveal from './TextReveal';
 
-interface LandingHeroProps {
+export interface LandingHeroProps {
   navigateTo: (path: string) => void;
   apkUrl?: string;
 }
 
 export default function LandingHero({ navigateTo, apkUrl }: LandingHeroProps) {
-  const { preferences } = useLivexPreferences();
-  const isReduced = preferences.reduceMotion;
-
-  const containerVariants = {
-    hidden: {},
-    visible: {
-      transition: {
-        staggerChildren: isReduced ? 0 : 0.08,
-      },
-    },
-  };
-
-  const itemVariants = {
-    hidden: {
-      opacity: 0,
-      y: isReduced ? 0 : 12,
-    },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: isReduced ? 0 : 0.45,
-        ease: [0.16, 1, 0.3, 1] as [number, number, number, number],
-      },
-    },
-  };
+  const morphWords = [
+    'Touring Bands',
+    'Studio Sessions',
+    'Guitarists & Bassists',
+    'Vocalists & Songwriters',
+    'Live Ensembles',
+  ];
 
   return (
-    <section className="relative pt-24 sm:pt-32 pb-16 sm:pb-24 px-4 sm:px-6 lg:px-8 select-none bg-black overflow-hidden">
-      {/* Subtle hairline architectural grid background */}
-      <div className="absolute inset-0 bg-[radial-gradient(#ffffff08_1px,transparent_1px)] [background-size:28px_28px] pointer-events-none opacity-50" />
-      <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent pointer-events-none" />
+    <section className="relative pt-32 pb-16 md:pt-40 md:pb-24 overflow-hidden bg-black select-none">
+      {/* Subtle Hardware Grid Pattern */}
+      <div
+        className="absolute inset-0 pointer-events-none opacity-[0.035]"
+        style={{
+          backgroundImage: `linear-gradient(to right, #ffffff 1px, transparent 1px), linear-gradient(to bottom, #ffffff 1px, transparent 1px)`,
+          backgroundSize: '48px 48px',
+        }}
+      />
 
-      <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        className="max-w-4xl mx-auto text-center relative z-10"
-      >
-        {/* Single, understated mono eyebrow */}
-        <motion.div variants={itemVariants} className="inline-flex items-center justify-center mb-6">
-          <div className="flex items-center gap-2 font-mono text-[11px] tracking-[0.14em] text-zinc-500 uppercase px-3 py-1 rounded border border-white/[0.08] bg-[#0c0c0e]">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/80" />
-            <span>LIVEX AUDIO WORKSPACE // V4.0</span>
-          </div>
-        </motion.div>
-
-        {/* Crisp, high-contrast headline */}
-        <motion.h1
-          variants={itemVariants}
-          className="text-4xl sm:text-6xl md:text-7xl font-semibold tracking-[-0.035em] text-white leading-[1.04] mb-6 max-w-3xl mx-auto"
-        >
-          The Rehearsal & Live
-          <br />
-          <span className="text-zinc-400">
-            Performance Engine.
+      <div className="relative max-w-5xl mx-auto px-6 flex flex-col items-center text-center">
+        {/* Understated Mono Eyebrow */}
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.04] border border-white/10 mb-6 backdrop-blur-md">
+          <Terminal className="w-3.5 h-3.5 text-zinc-400" />
+          <span className="text-[11px] font-mono uppercase tracking-[0.18em] text-zinc-300 font-medium">
+            LIVEX AUDIO WORKSPACE // V4.0
           </span>
-        </motion.h1>
+        </div>
 
-        {/* Purposeful value subtitle */}
-        <motion.p
-          variants={itemVariants}
-          className="max-w-2xl mx-auto text-base sm:text-lg leading-[1.6] text-zinc-400 mb-10 font-normal"
-        >
-          Low-latency multitrack stem isolation, dynamic chord teleprompting, polyphonic beat sequencing,
-          sub-cent vocal calibration, and synchronized stage plots in one unified workstation.
-        </motion.p>
+        {/* Dynamic Display Headline with TextMorph */}
+        <h1 className="text-3xl sm:text-5xl md:text-6xl font-bold tracking-[-0.035em] text-white max-w-4xl leading-[1.12]">
+          <span>The High-Craft Audio Engine for </span>
+          <br className="hidden sm:inline" />
+          <TextMorph words={morphWords} intervalMs={3000} className="text-white underline decoration-white/20 underline-offset-8" />
+        </h1>
 
-        {/* Tactile, cohesive CTA Row */}
-        <motion.div
-          variants={itemVariants}
-          className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-3.5 max-w-xl mx-auto"
-        >
-          {/* Primary Action: Solid white tactile button (zero artificial blurry glow) */}
+        {/* Subtitle with TextReveal */}
+        <p className="mt-6 text-sm sm:text-base md:text-lg text-zinc-400 max-w-2xl font-normal leading-relaxed text-pretty">
+          <TextReveal
+            text="Five purpose-built workstations for rehearsal, composition, and stage performance. Offline-first local DSP, WebAudio multitrack worklets, and zero-latency device sync."
+            delayOffset={0.1}
+          />
+        </p>
+
+        {/* Cohesive Tactile CTA Cluster (Zero fake halos) */}
+        <div className="mt-9 flex flex-wrap items-center justify-center gap-3.5">
+          {/* Primary Action: Solid Crisp Button */}
           <button
-            type="button"
-            onClick={() => {
-              sessionStorage.setItem('livex:entered_from_landing', 'true');
-              navigateTo('/app');
-            }}
-            className="group w-full sm:w-auto px-6 h-11 rounded-md bg-white text-black font-medium text-xs tracking-tight flex items-center justify-center gap-2 hover:bg-zinc-100 transition-colors duration-150 active:scale-[0.96] cursor-pointer shadow-xs"
+            onClick={() => navigateTo('/app')}
+            className="flex items-center gap-2 px-6 py-3 rounded-full bg-white text-black text-xs md:text-sm font-semibold tracking-tight hover:bg-zinc-200 active:scale-[0.96] transition-all duration-150 shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
           >
             <span>Open Web Workstation</span>
-            <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
+            <ArrowUpRight className="w-4 h-4" />
           </button>
 
-          {/* Secondary Action: Bordered dark anodized button */}
+          {/* Secondary Action: Bordered Tactile Button */}
           {apkUrl ? (
             <a
               href={apkUrl}
-              className="w-full sm:w-auto px-5 h-11 rounded-md bg-[#111114] hover:bg-[#18181c] text-white font-medium text-xs tracking-tight border border-white/15 hover:border-white/25 flex items-center justify-center gap-2 transition-all duration-150 active:scale-[0.96] cursor-pointer"
+              download
+              className="flex items-center gap-2 px-5 py-3 rounded-full bg-white/[0.04] hover:bg-white/[0.08] border border-white/15 text-white text-xs md:text-sm font-medium tracking-tight active:scale-[0.96] transition-all duration-150 backdrop-blur-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
             >
-              <Download className="w-3.5 h-3.5 text-zinc-400" />
+              <Download className="w-4 h-4 text-zinc-400" />
               <span>Download Android APK</span>
             </a>
           ) : (
             <button
-              disabled
-              className="w-full sm:w-auto px-5 h-11 rounded-md bg-[#111114]/60 text-zinc-500 font-medium text-xs tracking-tight border border-white/5 flex items-center justify-center gap-2 cursor-not-allowed opacity-60"
+              onClick={() => {
+                const el = document.getElementById('modules');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="flex items-center gap-2 px-5 py-3 rounded-full bg-white/[0.04] hover:bg-white/[0.08] border border-white/15 text-white text-xs md:text-sm font-medium tracking-tight active:scale-[0.96] transition-all duration-150 backdrop-blur-sm"
             >
-              <Download className="w-3.5 h-3.5" />
-              <span>APK Packaging</span>
+              <span>Explore Workstations</span>
             </button>
           )}
+        </div>
 
-          {/* Direct clean text link to Privacy Policy */}
-          <button
-            type="button"
-            onClick={() => navigateTo('/privacy')}
-            className="w-full sm:w-auto px-3.5 h-11 rounded-md text-xs font-mono text-zinc-400 hover:text-white flex items-center justify-center gap-1.5 transition-colors cursor-pointer border border-transparent hover:border-white/10"
-          >
-            <ShieldCheck className="w-3.5 h-3.5 text-zinc-500" />
-            <span>Privacy Policy</span>
-            <span className="text-zinc-600">→</span>
-          </button>
-        </motion.div>
-
-        {/* Technical specs strip under CTA */}
-        <motion.div
-          variants={itemVariants}
-          className="mt-14 pt-8 border-t border-white/[0.08] flex flex-wrap items-center justify-center gap-6 sm:gap-8 text-[11px] font-mono text-zinc-500"
-        >
-          <div className="flex items-center gap-2">
-            <span className="text-zinc-600 font-bold">[ 01 ]</span>
-            <span className="text-zinc-300">WEB AUDIO & WASM WORKLETS</span>
+        {/* Release Coordinates Badge */}
+        <div className="mt-8 flex items-center gap-3 text-[11px] font-mono text-zinc-500">
+          <div className="flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+            <span>v4.0.0 Web</span>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-zinc-600 font-bold">[ 02 ]</span>
-            <span className="text-zinc-300">5 UNIFIED STAGE WORKSTATIONS</span>
+          <span>•</span>
+          <span>v3.7.8 Android APK</span>
+          <span>•</span>
+          <div className="flex items-center gap-1 text-zinc-400">
+            <ShieldCheck className="w-3.5 h-3.5 text-zinc-400" />
+            <span>SHA-256 Verified</span>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-zinc-600 font-bold">[ 03 ]</span>
-            <span className="text-zinc-300">100% OFFLINE CAPABLE</span>
-          </div>
-        </motion.div>
-      </motion.div>
+        </div>
+      </div>
     </section>
   );
 }

@@ -2,11 +2,13 @@ import { useStudioPreferences } from '@workspace/livex-core';
 import { LivexLogo } from '@workspace/ui-shared';
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import LandingNavbar from './components/LandingNavbar';
+import ResizableNavbar from './components/ResizableNavbar';
 import LandingHero from './components/LandingHero';
-import LandingWorkstationShowcase from './components/LandingWorkstationShowcase';
-import LandingFeatureGrid from './components/LandingFeatureGrid';
-import LandingDownloads from './components/LandingDownloads';
+import GlassIcons from './components/GlassIcons';
+import Marquee3D from './components/Marquee3D';
+import WorkstationBentoGrid from './components/WorkstationBentoGrid';
+import LandingPricing from './components/LandingPricing';
+import LandingAbout from './components/LandingAbout';
 import LandingFooter from './components/LandingFooter';
 
 export interface LivexLandingPageProps {
@@ -66,17 +68,17 @@ export default function LivexLandingPage({ navigateTo }: LivexLandingPageProps) 
     if (introStep === 'logo-in') {
       t1 = setTimeout(() => {
         setIntroStep('logo-hold');
-      }, 550);
+      }, 450);
     } else if (introStep === 'logo-hold') {
       t2 = setTimeout(() => {
         setIntroStep('logo-out');
-      }, 800);
+      }, 650);
     } else if (introStep === 'logo-out') {
       t3 = setTimeout(() => {
         sessionStorage.setItem('livex:landingIntroSeen', 'true');
         setIntroStep('done');
         setShowIntro(false);
-      }, 650);
+      }, 500);
     }
 
     return () => {
@@ -121,11 +123,11 @@ export default function LivexLandingPage({ navigateTo }: LivexLandingPageProps) 
           <motion.div
             initial={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
             className="fixed inset-0 bg-black z-[9999] flex flex-col items-center justify-center select-none"
           >
             <motion.div
-              initial={{ opacity: 0, scale: 0.92, filter: 'blur(4px)' }}
+              initial={{ opacity: 0, scale: 0.94, filter: 'blur(4px)' }}
               animate={
                 introStep === 'logo-in'
                   ? { opacity: 1, scale: 1, filter: 'blur(0px)' }
@@ -133,17 +135,17 @@ export default function LivexLandingPage({ navigateTo }: LivexLandingPageProps) 
                     ? { opacity: 1, scale: 1, filter: 'blur(0px)' }
                     : { opacity: 0, scale: 0.96, filter: 'blur(2px)' }
               }
-              transition={{ duration: introStep === 'logo-out' ? 0.5 : 0.55, ease: 'easeInOut' }}
+              transition={{ duration: introStep === 'logo-out' ? 0.4 : 0.45, ease: 'easeInOut' }}
               className="text-white flex flex-col items-center gap-4"
             >
-              <LivexLogo size={80} />
+              <LivexLogo size={72} />
               <motion.span
                 initial={{ opacity: 0, y: 4 }}
                 animate={introStep !== 'logo-out' ? { opacity: 0.6, y: 0 } : { opacity: 0, y: -2 }}
-                transition={{ delay: 0.2, duration: 0.4 }}
-                className="text-xs uppercase tracking-[0.2em] font-semibold text-zinc-400 select-none font-mono"
+                transition={{ delay: 0.15, duration: 0.35 }}
+                className="text-xs uppercase tracking-[0.24em] font-semibold text-zinc-400 select-none font-mono"
               >
-                Livex
+                Livex Audio
               </motion.span>
             </motion.div>
           </motion.div>
@@ -153,31 +155,31 @@ export default function LivexLandingPage({ navigateTo }: LivexLandingPageProps) 
       <motion.div
         initial={showIntro ? { opacity: 0 } : { opacity: 1 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-        className="min-h-screen font-sans selection:bg-zinc-500/30 overflow-x-hidden bg-black text-white"
+        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        className="min-h-screen font-sans selection:bg-white/20 selection:text-white overflow-x-hidden bg-black text-white"
       >
-        {/* Navbar with glass translucency & direct Privacy Policy link */}
-        <LandingNavbar navigateTo={navigateTo} />
+        {/* 1. Floating Resizable Navbar (Aceternity UI style) */}
+        <ResizableNavbar navigateTo={navigateTo} />
 
-        {/* Hero Section with high-impact title case and CTA sheen */}
+        {/* 2. Animated Hero Section with Text Morph & Text Reveal */}
         <LandingHero navigateTo={navigateTo} apkUrl={release?.apkUrl} />
 
-        {/* Interactive Workstations Showcase (Groovex, Chordex, Drumex, Vocalex, Stagex) */}
-        <LandingWorkstationShowcase />
+        {/* 3. Functional Glass Icons (ReactBits style) */}
+        <GlassIcons navigateTo={navigateTo} />
 
-        {/* Core Technical Grid */}
-        <LandingFeatureGrid />
+        {/* 4. 3D Marquee Showcase with Real Screenshots (Aceternity UI style) */}
+        <Marquee3D />
 
-        {/* Downloads / Platforms Block */}
-        <LandingDownloads
-          navigateTo={navigateTo}
-          apkUrl={release?.apkUrl}
-          apkVersion={release?.version}
-          apkSizeBytes={release?.apkSizeBytes}
-          loadingRelease={loadingRelease}
-        />
+        {/* 5. Information-Dense Bento Grid (Aceternity UI style) */}
+        <WorkstationBentoGrid navigateTo={navigateTo} />
 
-        {/* Footer with prominent Privacy Policy */}
+        {/* 6. Restrained Pricing Tiers */}
+        <LandingPricing navigateTo={navigateTo} apkUrl={release?.apkUrl} />
+
+        {/* 7. Musician-First About Section */}
+        <LandingAbout />
+
+        {/* 8. Pure AMOLED Footer with Verified Privacy Policy Link */}
         <LandingFooter
           navigateTo={navigateTo}
           apkUrl={release?.apkUrl}
