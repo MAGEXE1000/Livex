@@ -1,4 +1,6 @@
 import { Dialog } from '../../../shared/design-system/dialogs';
+import { AnimatedDrawer } from '../../../components/AnimatedDrawer';
+import { toast } from 'sonner';
 import { MorphingActionSurface } from '../../../shared/design-system/MorphingActionSurface';
 import { IosSearchBar } from '../../../components/ui/IosSearchBar';
 import { motion, AnimatePresence } from 'motion/react';
@@ -3721,7 +3723,7 @@ export default function DrumEditor() {
                   {/* Clear */}
                   <div style={{ position: 'relative' }}>
                     <button
-                      onClick={() => setShowClearConfirm((s) => !s)}
+                      onClick={() => setShowClearConfirm(true)}
                       title="Clear pattern"
                       aria-label="Clear pattern"
                       className="btn-smooth"
@@ -3742,88 +3744,6 @@ export default function DrumEditor() {
                         delete
                       </span>
                     </button>
-                    {showClearConfirm && (
-                      <div
-                        style={{
-                          position: 'absolute',
-                          top: 'calc(100% + 8px)',
-                          right: 0,
-                          background: 'var(--surface-dialog-bg)',
-                          border: '1px solid var(--c-border)',
-                          borderRadius: 12,
-                          padding: '12px 14px',
-                          boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
-                          backdropFilter: 'var(--surface-float-blur)',
-                          WebkitBackdropFilter: 'var(--surface-float-blur)',
-                          minWidth: 190,
-                          zIndex: 100,
-                        }}
-                      >
-                        <p
-                          style={{
-                            margin: '0 0 10px',
-                            fontSize: 12.5,
-                            fontWeight: 700,
-                            color: 'var(--c-text-primary)',
-                            fontFamily: 'var(--studio-font-body)',
-                            lineHeight: 1.4,
-                          }}
-                        >
-                          Reset pattern?
-                        </p>
-                        <p
-                          style={{
-                            margin: '0 0 12px',
-                            fontSize: 11,
-                            color: 'var(--c-text-muted)',
-                            lineHeight: 1.4,
-                          }}
-                        >
-                          All hits will be removed, preserving your bar count. You can undo after.
-                        </p>
-                        <div style={{ display: 'flex', gap: 6 }}>
-                          <button
-                            onClick={() => setShowClearConfirm(false)}
-                            className="btn-smooth"
-                            style={{
-                              flex: 1,
-                              padding: '7px 0',
-                              borderRadius: 9,
-                              background: 'rgba(128,128,128,0.12)',
-                              border: 'none',
-                              cursor: 'pointer',
-                              fontSize: 12,
-                              fontWeight: 700,
-                              color: 'var(--c-text-secondary)',
-                              fontFamily: 'var(--studio-font-body)',
-                            }}
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            onClick={() => {
-                              handleClear();
-                              setShowClearConfirm(false);
-                            }}
-                            className="btn-smooth"
-                            style={{
-                              flex: 1,
-                              padding: '7px 0',
-                              borderRadius: 9,
-                              background: 'var(--c-error-container)',
-                              border: '1px solid var(--c-error-container)',
-                              cursor: 'pointer',
-                              fontSize: 12,
-                              fontWeight: 700,
-                              color: 'var(--c-error-dim, #f87171)',
-                              fontFamily: 'var(--studio-font-body)',
-                            }}
-                          >
-                            Clear
-                          </button>
-                        </div>
-                      </div>
-                    )}
                   </div>
 
                   {/* Save Groove */}
@@ -5421,97 +5341,9 @@ export default function DrumEditor() {
                           >
                             {/* 1. Erase / Trash action */}
                             <div style={{ position: 'relative' }}>
-                              {showClearConfirm && (
-                                <div
-                                  style={{
-                                    position: 'absolute',
-                                    bottom: 'calc(100% + 14px)',
-                                    left: 0,
-                                    background: isAmoled
-                                      ? 'rgba(4,4,4,0.98)'
-                                      : isLight
-                                        ? 'rgba(250,250,252,0.98)'
-                                        : 'rgba(18,18,22,0.98)',
-                                    border: isLight
-                                      ? '1px solid rgba(0,0,0,0.1)'
-                                      : '1px solid rgba(255,255,255,0.1)',
-                                    borderRadius: 14,
-                                    padding: '12px 14px',
-                                    boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-                                    backdropFilter: 'var(--surface-float-blur)',
-                                    WebkitBackdropFilter: 'var(--surface-float-blur)',
-                                    minWidth: 190,
-                                    animation: 'drumHamburgerIn 150ms cubic-bezier(0.22,1,0.36,1)',
-                                    zIndex: 80,
-                                  }}
-                                >
-                                  <p
-                                    style={{
-                                      margin: '0 0 10px',
-                                      fontSize: 12.5,
-                                      fontWeight: 700,
-                                      color: 'var(--c-text-primary)',
-                                      fontFamily: 'var(--studio-font-body)',
-                                      lineHeight: 1.4,
-                                    }}
-                                  >
-                                    Reset pattern?
-                                  </p>
-                                  <p
-                                    style={{
-                                      margin: '0 0 12px',
-                                      fontSize: 11,
-                                      color: 'var(--c-text-muted)',
-                                      lineHeight: 1.4,
-                                    }}
-                                  >
-                                    All hits and extra bars will be removed, leaving one empty bar.
-                                    You can undo after.
-                                  </p>
-                                  <div style={{ display: 'flex', gap: 6 }}>
-                                    <button
-                                      onClick={() => setShowClearConfirm(false)}
-                                      className="btn-smooth cursor-pointer"
-                                      style={{
-                                        flex: 1,
-                                        padding: '7px 0',
-                                        borderRadius: 9,
-                                        background: 'rgba(128,128,128,0.12)',
-                                        border: 'none',
-                                        fontSize: 12,
-                                        fontWeight: 700,
-                                        color: 'var(--c-text-secondary)',
-                                        fontFamily: 'var(--studio-font-body)',
-                                      }}
-                                    >
-                                      Cancel
-                                    </button>
-                                    <button
-                                      onClick={() => {
-                                        handleClear();
-                                        setShowClearConfirm(false);
-                                      }}
-                                      className="btn-smooth cursor-pointer"
-                                      style={{
-                                        flex: 1,
-                                        padding: '7px 0',
-                                        borderRadius: 9,
-                                        background: 'rgba(239,68,68,0.15)',
-                                        border: '1px solid rgba(239,68,68,0.3)',
-                                        fontSize: 12,
-                                        fontWeight: 700,
-                                        color: '#f87171',
-                                        fontFamily: 'var(--studio-font-body)',
-                                      }}
-                                    >
-                                      Clear
-                                    </button>
-                                  </div>
-                                </div>
-                              )}
                               <button
                                 onClick={() => {
-                                  setShowClearConfirm((s) => !s);
+                                  setShowClearConfirm(true);
                                   setShowLoopPanel(false);
                                   setShowBpmPanel(false);
                                 }}
@@ -6677,6 +6509,23 @@ export default function DrumEditor() {
           isAmoled={isAmoled}
         />
       </MorphingActionSurface>
+
+      {/* Thumb-Accessible Bottom Animated Drawer for Pattern Reset */}
+      <AnimatedDrawer
+        isOpen={showClearConfirm}
+        onClose={() => setShowClearConfirm(false)}
+        onConfirm={() => {
+          handleClear();
+          setShowClearConfirm(false);
+          toast.success('Pattern cleared');
+        }}
+        title="Reset Pattern?"
+        description="All hits will be removed, preserving your bar count. You can undo after."
+        confirmText="Clear Pattern"
+        cancelText="Cancel"
+        isDestructive={true}
+        testId="drumex-clear-pattern-drawer"
+      />
     </div>
   );
 }

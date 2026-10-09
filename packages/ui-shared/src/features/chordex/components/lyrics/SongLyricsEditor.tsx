@@ -61,6 +61,7 @@ import {
   applyBarsToLines,
 } from '@workspace/livex-core';
 import { Dialog } from '../../../../shared/design-system/dialogs';
+import { AnimatedDrawer } from '../../../../components/AnimatedDrawer';
 import { Button } from '../../../../shared/design-system/buttons';
 import { MorphingActionSurface } from '../../../../shared/design-system/MorphingActionSurface';
 import { CustomBarsSheet } from '../../../../shared/design-system/CustomBarsSheet';
@@ -4716,42 +4717,23 @@ export const SongLyricsEditor: React.FC<SongLyricsEditorProps> = ({
             document.body
           )}
 
-        {/* ── DIALOG: CLEAR ALL LYRICS CONFIRMATION ── */}
-        <Dialog
-          open={showClearLyricsConfirm}
+        {/* ── ANIMATED DRAWER: CLEAR ALL LYRICS CONFIRMATION (Gesture-Driven, Thumb-Accessible) ── */}
+        <AnimatedDrawer
+          isOpen={showClearLyricsConfirm}
           onClose={() => setShowClearLyricsConfirm(false)}
+          onConfirm={() => {
+            handleClearAllLyrics();
+            setShowClearLyricsConfirm(false);
+          }}
           title="Clear Lyrics?"
+          description="This will permanently remove all text from this song. This action cannot be undone."
+          confirmText="Clear All"
+          cancelText="Cancel"
           isDestructive={true}
-          footer={
-            <>
-              <Button
-                onClick={() => setShowClearLyricsConfirm(false)}
-                data-testid="cancel-clear-lyrics-btn"
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="danger"
-                data-testid="confirm-clear-lyrics-btn"
-                onClick={() => {
-                  handleClearAllLyrics();
-                  setShowClearLyricsConfirm(false);
-                }}
-                style={{
-                  backgroundColor: 'rgba(239, 68, 68, 0.15)',
-                  color: '#EF4444',
-                  borderColor: 'rgba(239, 68, 68, 0.3)',
-                }}
-              >
-                Clear All
-              </Button>
-            </>
-          }
-        >
-          <p className="text-sm text-[var(--c-text-secondary)]">
-            This will permanently remove all text from this song. This action cannot be undone.
-          </p>
-        </Dialog>
+          testId="chordex-clear-lyrics"
+          confirmTestId="confirm-clear-lyrics-btn"
+          cancelTestId="cancel-clear-lyrics-btn"
+        />
 
         {/* ── DIALOG: CHORD SELECTION PALETTE ── */}
         <Dialog

@@ -28,6 +28,8 @@ import {
 import { useStagexStore } from '../state/useStagexStore';
 import { resolveAccent } from '@workspace/livex-core';
 import { activeOverlaysRegistry } from '../../../shared/design-system/dialogs';
+import { AnimatedDrawer } from '../../../components/AnimatedDrawer';
+import { toast } from 'sonner';
 
 export interface StageCanvasViewProps {
   isActive?: boolean;
@@ -71,6 +73,7 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
 
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const [iframeLoading, setIframeLoading] = useState(true);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   // Desktop Right Stage Elements & Specs Sidebar State
   const [rightSidebarTab, setRightSidebarTab] = useState<RightSidebarTab>('elements');
@@ -1036,7 +1039,7 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
           <button
             type="button"
             data-testid="stagex-clear-stage-btn"
-            onClick={handleClearStage}
+            onClick={() => setShowClearConfirm(true)}
             title={tr.stagex?.clearStage || (isSpanish ? 'Limpiar escenario' : 'Clear stage')}
             aria-label={tr.stagex?.clearStage || (isSpanish ? 'Limpiar escenario' : 'Clear stage')}
             className="stagex-floating-trash-btn pointer-events-auto w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center cursor-pointer active:scale-95 transition-all shadow-lg"
@@ -1423,6 +1426,27 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
           accent={accent}
         />
       )}
+
+      {/* Thumb-Accessible Bottom Animated Drawer for Clearing Stage */}
+      <AnimatedDrawer
+        isOpen={showClearConfirm}
+        onClose={() => setShowClearConfirm(false)}
+        onConfirm={() => {
+          handleClearStage();
+          setShowClearConfirm(false);
+          toast.success(isSpanish ? 'Escenario limpiado' : 'Stage plot cleared');
+        }}
+        title={isSpanish ? '¿Limpiar escenario?' : 'Clear Stage Plot?'}
+        description={
+          isSpanish
+            ? 'Se eliminarán todos los instrumentos, miembros y equipos del escenario. Esta acción no se puede deshacer.'
+            : 'All instruments, members, and gear will be removed from the stage canvas. This action cannot be undone.'
+        }
+        confirmText={isSpanish ? 'Limpiar escenario' : 'Clear Stage'}
+        cancelText={isSpanish ? 'Cancelar' : 'Cancel'}
+        isDestructive={true}
+        testId="stagex-clear-stage-drawer"
+      />
     </div>
   );
 };

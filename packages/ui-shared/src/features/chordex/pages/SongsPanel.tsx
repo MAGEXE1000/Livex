@@ -4,6 +4,7 @@ import { SongEditorForm, PresetFormContent, FormData } from '../components/SongE
 import { TransposeControls } from '../components/TransposeControls';
 import { useDragReorder } from '../components/useDragReorder';
 import { Dialog, activeOverlaysRegistry } from '../../../shared/design-system/dialogs';
+import { AnimatedDrawer } from '../../../components/AnimatedDrawer';
 import { SongLyricsEditor, SongLyricsComposer } from '../components/lyrics';
 import {
   getAllChords,
@@ -6887,49 +6888,30 @@ export default function SongsPanel() {
         />
       )}
 
-      {/* Root-level Delete Confirmation Dialog (Single Controlled Instance) */}
-      <Dialog
-        open={Boolean(showDeleteId)}
+      {/* Root-level Delete Confirmation Animated Drawer (Gesture-Driven, Thumb-Accessible) */}
+      <AnimatedDrawer
+        isOpen={Boolean(showDeleteId)}
         onClose={() => setShowDeleteId(null)}
+        onConfirm={() => {
+          if (showDeleteId) {
+            const targetId = showDeleteId;
+            deletePreset(targetId);
+            if (activePreset?.id === targetId) {
+              setActivePreset(null);
+            }
+            setShowDeleteId(null);
+            toast.success('Song deleted');
+          }
+        }}
         title={t.songs.confirmDelete}
+        description="Are you sure you want to delete this song preset? This action cannot be undone."
+        confirmText={t.songs.delete}
+        cancelText={t.songs.cancel}
         isDestructive={true}
-        footer={
-          <>
-            <Button
-              onClick={() => setShowDeleteId(null)}
-              data-testid="cancel-delete-btn"
-            >
-              {t.songs.cancel}
-            </Button>
-            <Button
-              variant="danger"
-              data-testid="confirm-delete-btn"
-              onClick={() => {
-                if (showDeleteId) {
-                  const targetId = showDeleteId;
-                  deletePreset(targetId);
-                  if (activePreset?.id === targetId) {
-                    setActivePreset(null);
-                  }
-                  setShowDeleteId(null);
-                  toast.success('Song deleted');
-                }
-              }}
-              style={{
-                backgroundColor: 'rgba(239, 68, 68, 0.15)',
-                color: '#EF4444',
-                borderColor: 'rgba(239, 68, 68, 0.3)',
-              }}
-            >
-              {t.songs.delete}
-            </Button>
-          </>
-        }
-      >
-        <p style={{ margin: 0, fontFamily: 'var(--font-body)', fontSize: '13px' }}>
-          Are you sure you want to delete this song preset? This action cannot be undone.
-        </p>
-      </Dialog>
+        testId="chordex-delete-song"
+        confirmTestId="confirm-delete-btn"
+        cancelTestId="cancel-delete-btn"
+      />
 
       {/* Root-level Unified Share Sheet */}
       <Dialog

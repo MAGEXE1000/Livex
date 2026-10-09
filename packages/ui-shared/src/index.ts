@@ -102,6 +102,7 @@ export * from './features/devtools/inspector';
 export { SharedAppShell, type SharedAppShellProps } from './shared/layout/SharedAppShell';
 export * from './components/motion';
 export { MorphingModal, type MorphingModalProps } from './components/motion/morphing-modal';
+export { AnimatedDrawer, type AnimatedDrawerProps } from './components/AnimatedDrawer';
 export * from './features/assistant';
 export * from './features/sync';
 
