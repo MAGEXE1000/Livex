@@ -1,4 +1,4 @@
-import { NavigationDispatcher, addError, processDiagnosticReport } from '@workspace/livex-core';
+import { NavigationDispatcher, addError, processDiagnosticReport, captureException } from '@workspace/livex-core';
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import {
   useChordStore,
@@ -537,6 +537,11 @@ export class ErrorBoundary extends Component<Props, State> {
         stack: error?.stack || errorInfo?.componentStack || '',
         source: `ErrorBoundary:${this.props.moduleName || 'Global'}`,
         module: this.props.moduleName || 'general',
+      });
+      captureException(error, {
+        source: `ErrorBoundary:${this.props.moduleName || 'Global'}`,
+        module: this.props.moduleName || 'general',
+        componentStack: errorInfo?.componentStack?.slice(0, 1000),
       });
     } catch (_) {}
 

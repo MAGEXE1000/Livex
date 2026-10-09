@@ -2,10 +2,14 @@ import {
   tolgee,
   seedAudioAssets,
   initDevToolsFramework,
+  initProductionErrorTracker,
   NavigationDispatcher,
   useSettingsStore,
   useNavigationStore,
 } from '@workspace/livex-core';
+
+// Initialize production error tracker with automated PII redaction and crash loop resilience
+initProductionErrorTracker({ platform: 'web' });
 
 // Initialize DevTools in development builds only (compile-time eliminated in production)
 if (import.meta.env.DEV) {

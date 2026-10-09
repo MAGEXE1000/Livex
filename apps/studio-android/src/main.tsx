@@ -5,6 +5,7 @@ import {
   tolgee,
   NATIVE_VERSION,
   initDevToolsFramework,
+  initProductionErrorTracker,
   NavigationDispatcher,
   BackDispatcher,
   useSettingsStore,
@@ -17,6 +18,9 @@ import {
 import { Capacitor } from '@capacitor/core';
 import { ErrorBoundary } from '@workspace/ui-shared';
 import './index.css';
+
+// Initialize production error tracker with automated PII redaction and crash loop resilience
+initProductionErrorTracker({ platform: 'android' });
 
 if (
   import.meta.env.DEV ||
