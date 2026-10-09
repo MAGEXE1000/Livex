@@ -4,6 +4,7 @@ import reactPlugin from 'eslint-plugin-react';
 import reactHooksPlugin from 'eslint-plugin-react-hooks';
 import prettierConfig from 'eslint-config-prettier';
 import livexPlugin from 'eslint-plugin-livex';
+import detectUnsafeRegex from './tools/eslint-plugin-livex/lib/rules/detect-unsafe-regex.js';
 import globals from 'globals';
 
 export default tseslint.config(
@@ -48,6 +49,11 @@ export default tseslint.config(
       react: reactPlugin,
       'react-hooks': reactHooksPlugin,
       livex: livexPlugin,
+      security: {
+        rules: {
+          'detect-unsafe-regex': detectUnsafeRegex,
+        },
+      },
     },
     languageOptions: {
       globals: {

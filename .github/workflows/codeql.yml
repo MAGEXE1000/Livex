@@ -60,7 +60,7 @@ jobs:
         with:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.language == 'java-kotlin' && 'manual' || 'none' }}
-          config-file: .github/codeql/codeql-config.yml
+          config-file: ./.github/codeql/codeql-config.yml
 
       - name: Build Android App for Java/Kotlin Analysis
         if: matrix.language == 'java-kotlin'

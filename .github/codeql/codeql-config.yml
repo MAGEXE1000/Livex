@@ -1,14 +1,17 @@
-name: "CodeQL config"
+name: 'Livex CodeQL Security Configuration'
 paths:
   - apps
   - packages
+  - scripts
 paths-ignore:
-  - 'node_modules/**'
   - '**/node_modules/**'
-  - 'dist/**'
   - '**/dist/**'
-  - '**/android-web/**'
+  - '**/build/**'
+  - 'apps/studio-android/android/app/build/**'
+  - 'apps/studio-android/android/.gradle/**'
 query-filters:
   - exclude:
       filename:
-        - /node_modules\//
+        - /.*node_modules.*/
+        - /.*\/build\/.*/
+        - /.*\/dist\/.*/

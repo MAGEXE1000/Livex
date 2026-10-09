@@ -72,7 +72,9 @@
     "release:parity": "node apps/studio-android/scripts/releaseParity/index.mjs",
     "test:release-parity": "node apps/studio-android/scripts/__tests__/release-parity.test.mjs",
     "test:groovex-transposition": "node scripts/test-groovex-transposition.mjs",
-    "security:check": "pnpm audit"
+    "security:check": "pnpm audit",
+    "security:lint": "eslint --ext .ts,.tsx packages/ apps/ --rule \"security/detect-unsafe-regex: error\"",
+    "check:all": "pnpm security:lint && pnpm lint:imports && pnpm check:references && pnpm check:circular && pnpm check:tokens && pnpm check:hook-order && pnpm typecheck:web && pnpm typecheck:android && pnpm test"
   },
   "private": true,
   "devDependencies": {
