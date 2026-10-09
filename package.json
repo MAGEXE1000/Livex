@@ -39,6 +39,7 @@
     "promo:apple": "node scripts/marketing/film/render-apple.mjs",
     "promo:apple:stills": "node scripts/marketing/film/render-apple.mjs --preview-stills",
     "playstore:generate": "node scripts/marketing/generate-playstore-assets.mjs",
+    "playstore:feature-graphic": "node scripts/marketing/generate-feature-graphic.mjs",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
