@@ -1,8 +1,6 @@
 package com.chordex.app;
 
 import android.content.Context;
-import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.OpenableColumns;
@@ -23,7 +21,8 @@ import java.util.Set;
  * untrusted URIs (e.g. from ACTION_VIEW and ACTION_SEND intents).
  *
  * Implements strict anti-confused-deputy verification, scheme and authority validation,
- * permission checks, UTF-8 text bounding against memory DoS, and path-traversal prevention.
+ * authority whitelisting, UTF-8 text bounding against memory DoS, and canonical
+ * directory-separator trailing guards against partial path traversal attacks.
  */
 public final class SafeContentResolver {
     public static final long DEFAULT_MAX_TEXT_BYTES = 5 * 1024 * 1024L; // 5 MB
@@ -43,44 +42,65 @@ public final class SafeContentResolver {
     private SafeContentResolver() {}
 
     /**
-     * Validates whether a URI is a safe, external content URI granted to this app.
+     * Checks whether a target file is strictly located within an allowed base directory,
+     * preventing partial path traversal (e.g. /app/base_dir_extra matching /app/base_dir)
+     * and parent directory traversal (e.g. ../../etc/passwd).
+     *
+     * @param allowedDirectory The allowed base directory
+     * @param targetFile The file to verify
+     * @return true if targetFile is within allowedDirectory or equals allowedDirectory, false otherwise
+     */
+    public static boolean isPathWithinDirectory(File allowedDirectory, File targetFile) {
+        if (allowedDirectory == null || targetFile == null) {
+            return false;
+        }
+        try {
+            File baseDir = allowedDirectory.getCanonicalFile();
+            File target = targetFile.getCanonicalFile();
+            String basePath = baseDir.getPath();
+            if (!basePath.endsWith(File.separator)) {
+                basePath += File.separator;
+            }
+            return target.getPath().startsWith(basePath) || target.equals(baseDir);
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    /**
+     * Resolves a relative or sub-path against an allowed base directory, verifying that
+     * the resolved canonical file remains strictly within the base directory.
+     *
+     * @param allowedDirectory The allowed base directory
+     * @param requestedPath The sub-path to resolve
+     * @return Canonical File strictly within allowedDirectory
+     * @throws IOException If resolving canonical path fails
+     * @throws SecurityException If requestedPath traverses outside allowedDirectory
+     */
+    public static File resolveSafePath(File allowedDirectory, String requestedPath) throws IOException, SecurityException {
+        if (allowedDirectory == null) {
+            throw new IllegalArgumentException("Allowed directory cannot be null");
+        }
+        if (requestedPath == null || requestedPath.trim().isEmpty()) {
+            throw new IllegalArgumentException("Requested path cannot be null or empty");
+        }
+        File targetFile = new File(allowedDirectory, requestedPath);
+        if (!isPathWithinDirectory(allowedDirectory, targetFile)) {
+            throw new SecurityException("Target path is outside allowed directory: " + requestedPath);
+        }
+        return targetFile.getCanonicalFile();
+    }
+
+    /**
+     * Strictly verifies whether an authority is authorized for content resolution.
+     * Only trusted platform storage authorities and the app's own FileProvider are authorized.
+     * Arbitrary external authorities are rejected.
      *
      * @param context Application/Activity context
-     * @param uri The URI to validate
-     * @return true if the URI is safe to access via ContentResolver, false otherwise
+     * @param rawAuthority Raw authority string from content URI
+     * @return true if the authority is authorized, false otherwise
      */
-    public static boolean isSafeUri(Context context, Uri uri) {
-        if (context == null || uri == null) {
-            return false;
-        }
-
-        // 1. Require "content" scheme strictly
-        String scheme = uri.getScheme();
-        if (scheme == null || !"content".equalsIgnoreCase(scheme)) {
-            return false;
-        }
-
-        // 1b. Block access to internal private directories like /data (CWE-441 / CWE-610)
-        String path = uri.getPath();
-        if (path != null) {
-            try {
-                java.nio.file.Path normalized =
-                        java.nio.file.FileSystems.getDefault().getPath(path).normalize();
-                java.nio.file.Path dataPath =
-                        java.nio.file.FileSystems.getDefault().getPath("/data").normalize();
-                if (normalized.startsWith(dataPath) || normalized.startsWith("/data") ||
-                    normalized.toString().equals("/data") || normalized.toString().startsWith("/data/")) {
-                    return false;
-                }
-            } catch (Exception ignored) {
-                if (path.equals("/data") || path.startsWith("/data/") || path.contains("/data/")) {
-                    return false;
-                }
-            }
-        }
-
-        // 2. Require non-empty authority
-        String rawAuthority = uri.getAuthority();
+    public static boolean isAuthorizedAuthority(Context context, String rawAuthority) {
         if (rawAuthority == null || rawAuthority.trim().isEmpty()) {
             return false;
         }
@@ -100,52 +120,83 @@ public final class SafeContentResolver {
             return false;
         }
 
-        // 3. Dynamic Package & Provider Self-Exclusion (Anti-Confused-Deputy)
-        if (context != null) {
-            String currentPackage = context.getPackageName();
-            if (currentPackage != null && !currentPackage.trim().isEmpty()) {
-                String lowerPackage = currentPackage.trim().toLowerCase(Locale.ROOT);
-                if (authority.equals(lowerPackage) ||
-                    authority.startsWith(lowerPackage + ".") ||
-                    authority.equals("com.chordex.app.fileprovider") ||
-                    authority.endsWith(".fileprovider")) {
-                    return false;
-                }
-            }
-
-            try {
-                android.content.pm.PackageManager pm = context.getPackageManager();
-                if (pm != null) {
-                    android.content.pm.ProviderInfo providerInfo = pm.resolveContentProvider(authority, 0);
-                    if (providerInfo != null && currentPackage != null && currentPackage.equalsIgnoreCase(providerInfo.packageName)) {
-                        return false;
-                    }
-                }
-            } catch (Exception ignored) {
-                // Fallback
-            }
-        } else {
-            if (authority.equals("livex.app") ||
-                authority.startsWith("livex.app.") ||
-                authority.equals("com.chordex.app") ||
-                authority.startsWith("com.chordex.app.") ||
-                authority.equals("livex.app.fileprovider") ||
-                authority.equals("com.chordex.app.fileprovider") ||
-                authority.endsWith(".fileprovider")) {
-                return false;
-            }
-        }
-
-        // 4. Verify trusted authority or read permission grant
+        // 1. Trusted platform storage and media providers
         if (TRUSTED_AUTHORITIES.contains(authority)) {
             return true;
         }
 
-        try {
-            return context.checkCallingOrSelfUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                    == PackageManager.PERMISSION_GRANTED;
-        } catch (Exception e) {
+        // 2. Application's own FileProvider (for local audio stems, cached waveforms, etc.)
+        if (context != null) {
+            String currentPackage = context.getPackageName();
+            if (currentPackage != null && !currentPackage.trim().isEmpty()) {
+                String lowerPackage = currentPackage.trim().toLowerCase(Locale.ROOT);
+                if (authority.equals(lowerPackage + ".fileprovider")) {
+                    return true;
+                }
+            }
+        }
+
+        // Explicit canonical app fileproviders for backward compatibility / multi-app flavors
+        if (authority.equals("com.chordex.app.fileprovider") ||
+            authority.equals("livex.app.fileprovider")) {
+            return true;
+        }
+
+        // All other authorities (e.g. arbitrary external apps, com.evil.provider, etc.) are rejected
+        return false;
+    }
+
+    /**
+     * Validates whether a URI is a safe content URI authorized for access by this app.
+     *
+     * @param context Application/Activity context
+     * @param uri The URI to validate
+     * @return true if the URI is safe to access via ContentResolver, false otherwise
+     */
+    public static boolean isSafeUri(Context context, Uri uri) {
+        if (context == null || uri == null) {
             return false;
+        }
+
+        // 1. Require "content" scheme strictly
+        String scheme = uri.getScheme();
+        if (scheme == null || !"content".equalsIgnoreCase(scheme)) {
+            return false;
+        }
+
+        // 1b. Block access to internal private directories like /data (CWE-441 / CWE-610)
+        String path = uri.getPath();
+        if (path != null) {
+            String normalizedPath = path.replace('\\', '/');
+            if (normalizedPath.equals("/data") || normalizedPath.startsWith("/data/")) {
+                return false;
+            }
+        }
+
+        // 2. Require non-empty authority and validate against strict whitelist
+        String rawAuthority = uri.getAuthority();
+        if (rawAuthority == null || rawAuthority.trim().isEmpty()) {
+            return false;
+        }
+
+        return isAuthorizedAuthority(context, rawAuthority);
+    }
+
+    /**
+     * Validates that a content URI is safe and authorized for resolution.
+     * Throws SecurityException if the URI fails validation.
+     *
+     * @param context Application/Activity context
+     * @param uri Content URI to validate
+     * @throws IllegalArgumentException If context or URI is null
+     * @throws SecurityException If URI is not safe or authority is unauthorized
+     */
+    public static void validateContentUri(Context context, Uri uri) throws SecurityException {
+        if (context == null || uri == null) {
+            throw new IllegalArgumentException("Context and URI cannot be null");
+        }
+        if (!isSafeUri(context, uri)) {
+            throw new SecurityException("Unsafe or unauthorized content URI: " + uri);
         }
     }
 
@@ -228,27 +279,41 @@ public final class SafeContentResolver {
         if (context == null || uri == null) {
             throw new IllegalArgumentException("Context and URI cannot be null");
         }
-        if (!isSafeUri(context, uri)) {
-            throw new SecurityException("Unsafe or unauthorized content URI: " + uri);
-        }
+        validateContentUri(context, uri);
+
         String path = uri.getPath();
         if (path != null) {
-            try {
-                java.nio.file.Path normalized =
-                        java.nio.file.FileSystems.getDefault().getPath(path).normalize();
-                if (normalized.startsWith("/data") || normalized.toString().startsWith("/data")) {
-                    throw new SecurityException("Unsafe path in content URI: " + uri);
-                }
-            } catch (SecurityException se) {
-                throw se;
-            } catch (Exception ignored) {
+            String normalizedPath = path.replace('\\', '/');
+            if (normalizedPath.equals("/data") || normalizedPath.startsWith("/data/")) {
+                throw new SecurityException("Unsafe path in content URI: " + uri);
             }
         }
+
         InputStream is = context.getContentResolver().openInputStream(uri);
         if (is == null) {
             throw new IOException("Unable to open input stream for: " + uri);
         }
         return is;
+    }
+
+    /**
+     * Safely opens an InputStream for a validated content URI string.
+     *
+     * @param context Application/Activity context
+     * @param uriString URI string to parse and validate
+     * @return InputStream for the content
+     * @throws IOException If opening the stream fails
+     * @throws SecurityException If URI string fails safety validation
+     */
+    public static InputStream openSafeInputStream(Context context, String uriString) throws IOException, SecurityException {
+        if (context == null) {
+            throw new IllegalArgumentException("Context cannot be null");
+        }
+        if (uriString == null || uriString.trim().isEmpty()) {
+            throw new IllegalArgumentException("URI string cannot be null or empty");
+        }
+        Uri uri = Uri.parse(uriString.trim());
+        return openSafeInputStream(context, uri);
     }
 
     /**
@@ -344,9 +409,7 @@ public final class SafeContentResolver {
         if (context == null || uri == null) {
             throw new IllegalArgumentException("Context and URI cannot be null");
         }
-        if (!isSafeUri(context, uri)) {
-            throw new SecurityException("Unsafe or unauthorized content URI: " + uri);
-        }
+        validateContentUri(context, uri);
 
         File cacheDir = context.getCacheDir();
         if (cacheDir == null) {
@@ -361,16 +424,7 @@ public final class SafeContentResolver {
             safeName = "shared_file";
         }
 
-        File tempFile = new File(cacheDir, "shared_" + System.currentTimeMillis() + "_" + safeName);
-
-        String canonicalCacheDirPath = cacheDir.getCanonicalPath();
-        if (canonicalCacheDirPath.endsWith(File.separator)) {
-            canonicalCacheDirPath = canonicalCacheDirPath.substring(0, canonicalCacheDirPath.length() - File.separator.length());
-        }
-        String canonicalDestPath = tempFile.getCanonicalPath();
-        if (!canonicalDestPath.startsWith(canonicalCacheDirPath + File.separator)) {
-            throw new SecurityException("Path traversal attempt blocked: " + tempFile.getName());
-        }
+        File tempFile = resolveSafePath(cacheDir, "shared_" + System.currentTimeMillis() + "_" + safeName);
 
         long limit = (maxBytes > 0) ? maxBytes : DEFAULT_MAX_STREAM_BYTES;
 

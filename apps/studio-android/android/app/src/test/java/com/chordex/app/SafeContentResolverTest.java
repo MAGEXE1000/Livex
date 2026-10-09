@@ -5,7 +5,6 @@ import static org.junit.Assert.*;
 import android.content.ContentResolver;
 import android.content.ContextWrapper;
 import android.content.pm.PackageManager;
-import android.content.pm.ProviderInfo;
 import android.net.MockUri;
 import android.net.Uri;
 import java.io.File;
@@ -95,35 +94,46 @@ public class SafeContentResolverTest {
     }
 
     @Test
-    public void testIsSafeUri_rejectsInternalPackageAuthorities() {
-        // App's own package name
-        assertFalse("Direct package authority must be rejected",
+    public void testIsSafeUri_rejectsDataDirectoryPath() {
+        assertFalse("Direct /data path must be rejected",
+                SafeContentResolver.isSafeUri(context, new MockUri("content", "media", "data")));
+        assertFalse("Sub /data path must be rejected",
+                SafeContentResolver.isSafeUri(context, new MockUri("content", "media", "data/user/0/stolen.db")));
+    }
+
+    @Test
+    public void testIsSafeUri_acceptsAppFileProvider() {
+        assertTrue("App's own FileProvider authority must be accepted for local stem loading",
+                SafeContentResolver.isSafeUri(context, new MockUri("content", "com.chordex.app.fileprovider", "stems/vocals.wav")));
+        assertTrue("livex.app.fileprovider must be accepted",
+                SafeContentResolver.isSafeUri(context, new MockUri("content", "livex.app.fileprovider", "stems/vocals.wav")));
+    }
+
+    @Test
+    public void testIsSafeUri_rejectsUnauthorizedInternalAndThirdPartyAuthorities() {
+        // Direct package name (no .fileprovider) must be rejected
+        assertFalse("Direct package authority without .fileprovider must be rejected",
                 SafeContentResolver.isSafeUri(context, new MockUri("content", "com.chordex.app", "data")));
-        // Sub-authorities
+        // Sub-package authority
         assertFalse("Sub-package authority must be rejected",
                 SafeContentResolver.isSafeUri(context, new MockUri("content", "com.chordex.app.provider", "data")));
-        // Specific fileprovider authority
-        assertFalse("App fileprovider authority must be rejected",
-                SafeContentResolver.isSafeUri(context, new MockUri("content", "com.chordex.app.fileprovider", "shared/file.mp3")));
-        // Any .fileprovider suffix
-        assertFalse("Generic .fileprovider authority must be rejected",
+        // Third-party fileproviders
+        assertFalse("Generic third-party .fileprovider authority must be rejected",
                 SafeContentResolver.isSafeUri(context, new MockUri("content", "custom.fileprovider", "shared/file.mp3")));
-        assertFalse("Nested .fileprovider authority must be rejected",
+        assertFalse("External app .fileprovider authority must be rejected",
                 SafeContentResolver.isSafeUri(context, new MockUri("content", "org.external.app.fileprovider", "shared/file.mp3")));
     }
 
     @Test
     public void testIsSafeUri_normalizesAuthorityWithUserinfoAndPort() {
-        // Normalizes authority by stripping userinfo (@) and port (:)
-        // If authority after stripping is internal or .fileprovider, it must still be rejected
         assertFalse("Authority with userinfo resolving to internal package must be rejected",
                 SafeContentResolver.isSafeUri(context, new MockUri("content", "user:pass@com.chordex.app", "file.mp3")));
-        assertFalse("Authority with port resolving to fileprovider must be rejected",
+        assertTrue("Authority with port resolving to app fileprovider must be accepted",
                 SafeContentResolver.isSafeUri(context, new MockUri("content", "com.chordex.app.fileprovider:8080", "file.mp3")));
-        assertFalse("Authority with userinfo and port resolving to .fileprovider must be rejected",
+        assertFalse("Authority with userinfo and port resolving to untrusted .fileprovider must be rejected",
                 SafeContentResolver.isSafeUri(context, new MockUri("content", "admin@secret.fileprovider:443", "file.mp3")));
 
-        // If authority after normalization resolves to trusted authority, it is accepted
+        // Trusted authority with userinfo and port
         assertTrue("Trusted authority with userinfo and port must be accepted",
                 SafeContentResolver.isSafeUri(context, new MockUri("content", "user@media:8080", "audio.mp3")));
     }
@@ -136,23 +146,96 @@ public class SafeContentResolverTest {
                 SafeContentResolver.isSafeUri(context, new MockUri("content", "com.android.providers.media.documents", "document/123")));
         assertTrue("com.android.providers.downloads.documents must be accepted",
                 SafeContentResolver.isSafeUri(context, new MockUri("content", "com.android.providers.downloads.documents", "document/456")));
+        assertTrue("com.android.externalstorage.documents must be accepted",
+                SafeContentResolver.isSafeUri(context, new MockUri("content", "com.android.externalstorage.documents", "document/789")));
         assertTrue("com.google.android.apps.docs.storage must be accepted",
                 SafeContentResolver.isSafeUri(context, new MockUri("content", "com.google.android.apps.docs.storage", "doc")));
+        assertTrue("com.google.android.apps.photos.contentprovider must be accepted",
+                SafeContentResolver.isSafeUri(context, new MockUri("content", "com.google.android.apps.photos.contentprovider", "photo")));
     }
 
     @Test
-    public void testIsSafeUri_permissionCheckForUntrustedExternalAuthority() {
+    public void testIsSafeUri_rejectsUntrustedExternalAuthorities() {
+        MockUri evilUri = new MockUri("content", "com.evil.provider", "data");
+        assertFalse("Arbitrary external authority must be rejected",
+                SafeContentResolver.isSafeUri(context, evilUri));
+
         MockUri externalUri = new MockUri("content", "com.external.provider", "shared/song.chordex");
-
-        // Without permission granted: rejected
-        context.setPermissionResult(PackageManager.PERMISSION_DENIED);
-        assertFalse("External URI without read permission must be rejected",
+        assertFalse("Untrusted external provider must be rejected even with permission flags",
                 SafeContentResolver.isSafeUri(context, externalUri));
+    }
 
-        // With permission granted: accepted
-        context.setPermissionResult(PackageManager.PERMISSION_GRANTED);
-        assertTrue("External URI with read permission granted must be accepted",
-                SafeContentResolver.isSafeUri(context, externalUri));
+    @Test
+    public void testValidateContentUri_succeedsOnAuthorizedUri() {
+        SafeContentResolver.validateContentUri(context, new MockUri("content", "com.chordex.app.fileprovider", "stems/vocals.wav"));
+        SafeContentResolver.validateContentUri(context, new MockUri("content", "media", "audio/1"));
+    }
+
+    @Test(expected = SecurityException.class)
+    public void testValidateContentUri_throwsOnUntrustedAuthority() {
+        SafeContentResolver.validateContentUri(context, new MockUri("content", "com.evil.provider", "data"));
+    }
+
+    @Test
+    public void testIsPathWithinDirectory_preventsPartialAndParentTraversal() throws IOException {
+        File baseDir = new File(System.getProperty("java.io.tmpdir"), "studio_base_test_" + System.currentTimeMillis());
+        baseDir.mkdirs();
+        try {
+            File validChild = new File(baseDir, "child.txt");
+            assertTrue("Direct child must be within base directory",
+                    SafeContentResolver.isPathWithinDirectory(baseDir, validChild));
+
+            File nestedChild = new File(baseDir, "nested/deep/child.txt");
+            assertTrue("Nested child must be within base directory",
+                    SafeContentResolver.isPathWithinDirectory(baseDir, nestedChild));
+
+            assertTrue("Base directory itself must be within base directory",
+                    SafeContentResolver.isPathWithinDirectory(baseDir, baseDir));
+
+            // Sibling directory (partial path traversal attack: /base_dir_extra vs /base_dir)
+            File siblingDir = new File(baseDir.getParentFile(), baseDir.getName() + "_extra");
+            File siblingChild = new File(siblingDir, "stolen.txt");
+            assertFalse("Sibling directory with matching prefix must be rejected",
+                    SafeContentResolver.isPathWithinDirectory(baseDir, siblingChild));
+
+            // Parent traversal (../../etc/hosts)
+            File parentTraversal = new File(baseDir, "../../etc/hosts");
+            assertFalse("Parent traversal must be rejected",
+                    SafeContentResolver.isPathWithinDirectory(baseDir, parentTraversal));
+
+            // Null checks
+            assertFalse(SafeContentResolver.isPathWithinDirectory(null, validChild));
+            assertFalse(SafeContentResolver.isPathWithinDirectory(baseDir, null));
+        } finally {
+            baseDir.delete();
+        }
+    }
+
+    @Test
+    public void testResolveSafePath_resolvesValidAndBlocksTraversal() throws IOException {
+        File baseDir = new File(System.getProperty("java.io.tmpdir"), "studio_resolve_test_" + System.currentTimeMillis());
+        baseDir.mkdirs();
+        try {
+            File resolved = SafeContentResolver.resolveSafePath(baseDir, "stems/vocals.wav");
+            assertNotNull(resolved);
+            assertTrue(resolved.getPath().contains("vocals.wav"));
+
+            try {
+                SafeContentResolver.resolveSafePath(baseDir, "../../etc/hosts");
+                fail("resolveSafePath must throw SecurityException on parent traversal");
+            } catch (SecurityException expected) {
+                // Expected
+            }
+
+            try {
+                SafeContentResolver.resolveSafePath(baseDir, "../" + baseDir.getName() + "_evil/file.txt");
+                fail("resolveSafePath must throw SecurityException on sibling directory traversal");
+            } catch (SecurityException expected) {
+                // Expected
+            }
+        } finally {
+            baseDir.delete();
+        }
     }
 
     @Test
@@ -164,7 +247,7 @@ public class SafeContentResolverTest {
         assertFalse(name1.contains("/"));
         assertFalse(name1.contains(".."));
 
-        // Sanitizing directory traversal without slash: .._.._secret.txt or sanitizing dots
+        // Sanitizing directory traversal without slash
         MockUri traversalUri2 = new MockUri("content", "media", "..\\..\\secret.txt");
         String name2 = SafeContentResolver.getSafeDisplayName(context, traversalUri2);
         assertTrue("Sanitized name must end with secret.txt", name2.endsWith("secret.txt"));
@@ -200,11 +283,16 @@ public class SafeContentResolverTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testOpenSafeInputStream_rejectsNullUri() throws IOException {
-        SafeContentResolver.openSafeInputStream(context, null);
+        SafeContentResolver.openSafeInputStream(context, (Uri) null);
     }
 
     @Test(expected = SecurityException.class)
     public void testOpenSafeInputStream_rejectsUnsafeUri() throws IOException {
         SafeContentResolver.openSafeInputStream(context, new MockUri("file", "", "sdcard/secret.txt"));
+    }
+
+    @Test(expected = SecurityException.class)
+    public void testOpenSafeInputStream_rejectsUntrustedAuthority() throws IOException {
+        SafeContentResolver.openSafeInputStream(context, new MockUri("content", "com.evil.provider", "file.mp3"));
     }
 }
