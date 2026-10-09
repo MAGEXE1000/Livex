@@ -40,6 +40,7 @@ import {
   useSidebar,
   LivexLandingPage,
 } from '@workspace/ui-web';
+import DashboardSidebar from './components/DashboardSidebar';
 
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 
@@ -275,8 +276,8 @@ export default function App() {
       isWeb={true}
       wrapProviders={(children) =>
         isWebDesktop ? (
-          <SidebarProvider>
-            <WebSidebarLayout shouldHideSidebar={false} />
+          <SidebarProvider defaultOpen={true}>
+            <DashboardSidebar />
             <SidebarInset>{children}</SidebarInset>
           </SidebarProvider>
         ) : (

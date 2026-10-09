@@ -262,6 +262,13 @@ async function run() {
           }, customFilename);
           await sleep(1000);
         }
+        if (customFilename.includes('collapsed')) {
+          await page.evaluate(() => {
+            const btn = document.querySelector('button[aria-label="Toggle Sidebar"]');
+            if (btn) btn.click();
+          });
+          await sleep(800);
+        }
       } else if (targetApp) {
         await page.evaluate(({ app, page }) => {
           if (window.NavigationDispatcher) {
