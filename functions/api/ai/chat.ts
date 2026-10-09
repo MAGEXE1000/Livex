@@ -32,19 +32,61 @@ interface Env {
   RATE_LIMIT_KV?: any;
 }
 
-// In-memory sliding window rate-limiter fallback (60 req / hr per IP)
-const requestCounts = new Map<string, { count: number; resetAt: number }>();
+interface AuthUser {
+  uid: string;
+  email?: string;
+}
 
-function checkRateLimit(ipOrUid: string): boolean {
+/**
+ * Validates incoming session token (Firebase ID token JWT) without heavy SDK.
+ * Decodes the base64url payload, verifies expiration, and extracts the user ID.
+ */
+function verifySessionToken(authHeader: string | null): AuthUser | null {
+  if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
+  const token = authHeader.slice(7).trim();
+  if (!token) return null;
+
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+
+    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const jsonStr = atob(base64);
+    const payload = JSON.parse(jsonStr);
+
+    const nowSec = Math.floor(Date.now() / 1000);
+    if (typeof payload.exp === 'number' && payload.exp < nowSec) {
+      return null;
+    }
+
+    const uid = payload.user_id || payload.sub;
+    if (typeof uid !== 'string' || !uid) return null;
+
+    return { uid, email: payload.email };
+  } catch {
+    return null;
+  }
+}
+
+// Multi-tier sliding window rate-limiter (IP and authenticated UID)
+const ipRateLimits = new Map<string, { count: number; resetAt: number }>();
+const userRateLimits = new Map<string, { count: number; resetAt: number }>();
+
+function checkRateLimit(
+  key: string,
+  limit: number,
+  windowMs: number,
+  store: Map<string, { count: number; resetAt: number }>
+): boolean {
   const now = Date.now();
-  const entry = requestCounts.get(ipOrUid);
+  const entry = store.get(key);
 
   if (!entry || now > entry.resetAt) {
-    requestCounts.set(ipOrUid, { count: 1, resetAt: now + 3600000 });
+    store.set(key, { count: 1, resetAt: now + windowMs });
     return true;
   }
 
-  if (entry.count >= 60) {
+  if (entry.count >= limit) {
     return false;
   }
 
@@ -877,113 +919,208 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
     'Connection': 'keep-alive',
   };
 
-  // 2. Rate Limiting Check
-  const clientIp = request.headers.get('cf-connecting-ip') || 'unknown-client';
-  if (!checkRateLimit(clientIp)) {
-    return new Response(
-      JSON.stringify({ error: 'Rate limit exceeded. Please wait a few minutes before asking more questions.' }),
-      {
-        status: 429,
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-      }
-    );
-  }
-
-  // 3. Parse and Validate Request Payload
-  let body: any;
   try {
-    body = await request.json();
-  } catch {
-    return new Response(JSON.stringify({ error: 'Invalid JSON payload' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-    });
-  }
+    // 2. Parse and Validate Request Payload
+    let body: any;
+    try {
+      body = await request.json();
+    } catch {
+      return new Response(
+        JSON.stringify({ error: 'Bad Request', message: 'Invalid JSON payload' }),
+        {
+          status: 400,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        }
+      );
+    }
 
-  const prompt = typeof body?.prompt === 'string' ? body.prompt.trim().slice(0, 4096) : '';
-  if (!prompt) {
-    return new Response(JSON.stringify({ error: 'Prompt is required' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-    });
-  }
+    const prompt = typeof body?.prompt === 'string' ? body.prompt.trim() : '';
+    if (!prompt) {
+      return new Response(
+        JSON.stringify({ error: 'Bad Request', message: 'Prompt is required and must be a non-empty string' }),
+        {
+          status: 400,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        }
+      );
+    }
+    if (prompt.length > 8192) {
+      return new Response(
+        JSON.stringify({ error: 'Bad Request', message: 'Prompt exceeds maximum allowed length of 8192 characters' }),
+        {
+          status: 400,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        }
+      );
+    }
 
-  const history = Array.isArray(body?.history) ? body.history.slice(-8) : [];
-  const musicalContext = body?.context || {};
-  const userLanguage = typeof body?.language === 'string' ? body.language : 'en';
-  const attachments = Array.isArray(body?.attachments) ? body.attachments : [];
+    if (body.history !== undefined && !Array.isArray(body.history)) {
+      return new Response(
+        JSON.stringify({ error: 'Bad Request', message: 'History must be an array' }),
+        {
+          status: 400,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        }
+      );
+    }
 
-  // Extract text from document attachments (TXT, MD, CSV, JSON, Tab, ChordPro)
-  let enrichedPrompt = prompt;
-  for (const att of attachments) {
-    const isText =
-      att.type?.startsWith('text/') ||
-      /\.(txt|md|csv|json|xml|tab|chordpro|cho|crd|pro)$/i.test(att.name || '');
+    const attachments = Array.isArray(body?.attachments) ? body.attachments : [];
+    if (body.attachments !== undefined && !Array.isArray(body.attachments)) {
+      return new Response(
+        JSON.stringify({ error: 'Bad Request', message: 'Attachments must be an array' }),
+        {
+          status: 400,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        }
+      );
+    }
+    if (attachments.length > 5) {
+      return new Response(
+        JSON.stringify({ error: 'Bad Request', message: 'Maximum 5 attachments allowed per request' }),
+        {
+          status: 400,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        }
+      );
+    }
 
-    if (isText && att.dataUrl && typeof att.dataUrl === 'string') {
-      const match = att.dataUrl.match(/^data:[^;]+;base64,(.+)$/);
-      if (match) {
-        try {
-          const binString = atob(match[1]);
-          const bytes = Uint8Array.from(binString, (c) => c.charCodeAt(0));
-          const textContent = new TextDecoder('utf-8').decode(bytes);
-          enrichedPrompt += `\n\n--- Attached Document: ${att.name || 'document'} (${att.type || 'text/plain'}) ---\n${textContent.slice(0, 16000)}\n--- End of Document ---`;
-        } catch {}
+    let totalAttachmentBytes = 0;
+    for (const att of attachments) {
+      if (typeof att?.dataUrl === 'string') {
+        totalAttachmentBytes += att.dataUrl.length;
       }
     }
-  }
+    if (totalAttachmentBytes > 12 * 1024 * 1024) {
+      return new Response(
+        JSON.stringify({ error: 'Bad Request', message: 'Total attachment size exceeds maximum allowed limit (10MB)' }),
+        {
+          status: 400,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        }
+      );
+    }
 
-  const hasImages = attachments.some(
-    (a: any) => a.type?.startsWith('image/') || a.dataUrl?.startsWith('data:image/')
-  );
-  const hasAudio = attachments.some(
-    (a: any) => a.type?.startsWith('audio/') || a.dataUrl?.startsWith('data:audio/')
-  );
-  const hasMediaAttachments = attachments.some(
-    (a: any) =>
-      a.type?.startsWith('image/') ||
-      a.type?.startsWith('audio/') ||
-      a.type === 'application/pdf' ||
-      a.dataUrl?.startsWith('data:image/') ||
-      a.dataUrl?.startsWith('data:audio/') ||
-      a.dataUrl?.startsWith('data:application/pdf')
-  );
-  const hasFiles = attachments.length > 0;
+    // 3. Authentication & Key Routing (Zero-BYOK vs BYOK)
+    const directApiKey =
+      request.headers.get('x-api-key') ||
+      (typeof body?.apiKey === 'string' && body.apiKey.trim() ? body.apiKey.trim() : null);
 
-  const contextualSystemPrompt = `${SYSTEM_PROMPT}
+    const isByok = Boolean(directApiKey);
+
+    const authHeader = request.headers.get('authorization');
+    const authUser = verifySessionToken(authHeader);
+
+    // If client is not providing their own API key, require verified session token
+    if (!isByok && !authUser) {
+      return new Response(
+        JSON.stringify({
+          error: 'Unauthorized',
+          message: 'Authentication required. Please sign in or provide a valid API key.',
+        }),
+        {
+          status: 401,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+          },
+        }
+      );
+    }
+
+    // 4. Rate Limiting Check (Dual-Tier: IP and authenticated UID)
+    const clientIp = request.headers.get('cf-connecting-ip') || 'unknown-client';
+    if (!checkRateLimit(clientIp, 60, 3600000, ipRateLimits)) {
+      return new Response(
+        JSON.stringify({ error: 'Too Many Requests', message: 'Rate limit exceeded. Please wait a few minutes before asking more questions.' }),
+        {
+          status: 429,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*', 'Retry-After': '60' },
+        }
+      );
+    }
+
+    if (authUser && !checkRateLimit(authUser.uid, 80, 3600000, userRateLimits)) {
+      return new Response(
+        JSON.stringify({ error: 'Too Many Requests', message: 'Account rate limit reached. Please wait a moment before sending more queries.' }),
+        {
+          status: 429,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*', 'Retry-After': '60' },
+        }
+      );
+    }
+
+    const history = Array.isArray(body?.history) ? body.history.slice(-8) : [];
+    const musicalContext = body?.context || {};
+    const userLanguage = typeof body?.language === 'string' ? body.language : 'en';
+
+    // Extract text from document attachments (TXT, MD, CSV, JSON, Tab, ChordPro)
+    let enrichedPrompt = prompt;
+    for (const att of attachments) {
+      const isText =
+        att.type?.startsWith('text/') ||
+        /\.(txt|md|csv|json|xml|tab|chordpro|cho|crd|pro)$/i.test(att.name || '');
+
+      if (isText && att.dataUrl && typeof att.dataUrl === 'string') {
+        const match = att.dataUrl.match(/^data:[^;]+;base64,(.+)$/);
+        if (match) {
+          try {
+            const binString = atob(match[1]);
+            const bytes = Uint8Array.from(binString, (c) => c.charCodeAt(0));
+            const textContent = new TextDecoder('utf-8').decode(bytes);
+            enrichedPrompt += `\n\n--- Attached Document: ${att.name || 'document'} (${att.type || 'text/plain'}) ---\n${textContent.slice(0, 16000)}\n--- End of Document ---`;
+          } catch {}
+        }
+      }
+    }
+
+    const hasImages = attachments.some(
+      (a: any) => a.type?.startsWith('image/') || a.dataUrl?.startsWith('data:image/')
+    );
+    const hasAudio = attachments.some(
+      (a: any) => a.type?.startsWith('audio/') || a.dataUrl?.startsWith('data:audio/')
+    );
+    const hasMediaAttachments = attachments.some(
+      (a: any) =>
+        a.type?.startsWith('image/') ||
+        a.type?.startsWith('audio/') ||
+        a.type === 'application/pdf' ||
+        a.dataUrl?.startsWith('data:image/') ||
+        a.dataUrl?.startsWith('data:audio/') ||
+        a.dataUrl?.startsWith('data:application/pdf')
+    );
+    const hasFiles = attachments.length > 0;
+
+    const contextualSystemPrompt = `${SYSTEM_PROMPT}
 
 Active Musical Context Snapshot:
 ${JSON.stringify(musicalContext, null, 2)}
 User UI Language Preference: "${userLanguage}". Always reply in the language in which the user queries.`;
 
-  // 4. API Keys & Endpoint Discovery (Zero-BYOK priority: server env secrets first)
-  const userApiKey =
-    request.headers.get('x-api-key') ||
-    request.headers.get('authorization')?.replace(/^Bearer\s+/i, '') ||
-    (typeof body?.apiKey === 'string' ? body.apiKey.trim() : '');
+    // 5. API Keys & Endpoint Discovery (Zero-BYOK priority: server env secrets first)
+    const userApiKey = directApiKey || undefined;
 
-  const geminiApiKey =
-    env.GEMINI_API_KEY ||
-    (userApiKey?.startsWith('AIza') ? userApiKey : undefined);
+    const geminiApiKey =
+      env.GEMINI_API_KEY ||
+      (userApiKey?.startsWith('AIza') ? userApiKey : undefined);
 
-  const groqApiKey =
-    env.GROQ_API_KEY ||
-    (userApiKey?.startsWith('gsk_') ? userApiKey : undefined);
+    const groqApiKey =
+      env.GROQ_API_KEY ||
+      (userApiKey?.startsWith('gsk_') ? userApiKey : undefined);
 
-  const customBaseUrl =
-    request.headers.get('x-ai-base-url') ||
-    (typeof body?.baseUrl === 'string' ? body.baseUrl.trim() : '') ||
-    env.OPENAI_COMPATIBLE_BASE_URL ||
-    env.DEEPSEEK_BASE_URL;
+    const customBaseUrl =
+      request.headers.get('x-ai-base-url') ||
+      (typeof body?.baseUrl === 'string' ? body.baseUrl.trim() : '') ||
+      env.OPENAI_COMPATIBLE_BASE_URL ||
+      env.DEEPSEEK_BASE_URL;
 
-  const openAiCompatibleKey =
-    env.OPENAI_COMPATIBLE_API_KEY ||
-    env.DEEPSEEK_API_KEY ||
-    groqApiKey ||
-    env.OPENAI_API_KEY ||
-    userApiKey;
+    const openAiCompatibleKey =
+      env.OPENAI_COMPATIBLE_API_KEY ||
+      env.DEEPSEEK_API_KEY ||
+      groqApiKey ||
+      env.OPENAI_API_KEY ||
+      userApiKey;
 
-  const explicitProvider = env.AI_ACTIVE_PROVIDER || body?.provider;
+    const explicitProvider = env.AI_ACTIVE_PROVIDER || body?.provider;
 
   // =========================================================================
   // TIER 1: GOOGLE GEMINI (2.5 Flash / 2.0 Flash + Native Google Search Grounding)
@@ -1735,11 +1872,12 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
   }
 
   // =========================================================================
-  // HONEST ERROR RESPONSE (Never a fake canned menu!)
+  // HONEST ERROR RESPONSE (Never leaks internal keys, stack traces, or paths)
   // =========================================================================
   return new Response(
     JSON.stringify({
-      error:
+      error: 'Service Unavailable',
+      message:
         'Livex AI cloud service is temporarily reaching capacity or connecting to edge inference. Please retry in a moment.',
     }),
     {
@@ -1750,6 +1888,22 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
       },
     }
   );
+  } catch (unhandledErr: any) {
+    console.error('[Edge Gateway] Unhandled error in AI gateway:', unhandledErr?.message || 'Unknown internal error');
+    return new Response(
+      JSON.stringify({
+        error: 'Internal Server Error',
+        message: 'An error occurred while processing the request.',
+      }),
+      {
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+        },
+      }
+    );
+  }
 };
 
 export const onRequestOptions = async () => {

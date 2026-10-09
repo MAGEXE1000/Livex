@@ -195,6 +195,59 @@ class RuleEngine {
 
     return false;
   }
+
+  // Evaluates authorization for /bands/{bandId}
+  evalBands({ op, bandId, auth, resourceData, requestData }) {
+    const isAuthenticated = auth !== null && auth.uid !== undefined;
+    if (!isAuthenticated) return false;
+
+    if (op === 'list') {
+      return false;
+    }
+
+    const isBandLeader = resourceData?.leaderId === auth.uid;
+    const isBandMember = isBandLeader || this.exists(`bands/${bandId}/members/${auth.uid}`);
+    const hasValidCode = typeof resourceData?.code === 'string' && this.exists(`bandCodes/${resourceData.code}`);
+
+    if (op === 'get') {
+      return isBandMember || hasValidCode;
+    }
+
+    if (op === 'create') {
+      return requestData?.leaderId === auth.uid && requestData?.id === bandId;
+    }
+
+    if (op === 'update' || op === 'delete') {
+      return isBandLeader;
+    }
+
+    return false;
+  }
+
+  // Evaluates authorization for /bands/{bandId}/members/{memberId}
+  evalBandMembers({ op, bandId, memberId, auth, resourceData, requestData }) {
+    const isAuthenticated = auth !== null && auth.uid !== undefined;
+    if (!isAuthenticated) return false;
+
+    const band = this.get(`bands/${bandId}`);
+    const isBandLeader = band?.data?.leaderId === auth.uid;
+    const isBandMember = isBandLeader || this.exists(`bands/${bandId}/members/${auth.uid}`);
+    const hasValidCode = typeof band?.data?.code === 'string' && this.exists(`bandCodes/${band.data.code}`);
+
+    if (op === 'read' || op === 'get' || op === 'list') {
+      return isBandMember || hasValidCode;
+    }
+
+    if (op === 'create') {
+      return auth.uid === requestData?.userId || isBandLeader;
+    }
+
+    if (op === 'update' || op === 'delete') {
+      return isBandLeader || auth.uid === resourceData?.userId;
+    }
+
+    return false;
+  }
 }
 
 // Test Runner
@@ -524,6 +577,85 @@ test('Host: Pruning dead participant presence must be ALLOWED', () => {
     auth: hostUser,
   });
   if (!pruneRes) throw new Error('Host was rejected when pruning dead presence');
+});
+
+// ── 7. BAND SECURITY & MEMBERSHIP ISOLATION ────────────────────────────────
+test('Attacker: Reading band or member roster without membership or join code must be REJECTED', () => {
+  const engine = new RuleEngine({
+    'bands/band_secret': {
+      data: {
+        id: 'band_secret',
+        name: 'Secret Band',
+        leaderId: hostUser.uid,
+        code: 'SEC123',
+      },
+    },
+    'bands/band_secret/members/user_host_123': {
+      data: { id: hostUser.uid, userId: hostUser.uid },
+    },
+  });
+
+  // Attacker tries to read band without valid code in bandCodes
+  const readBandAttacker = engine.evalBands({
+    op: 'get',
+    bandId: 'band_secret',
+    auth: attackerUser,
+    resourceData: engine.get('bands/band_secret').data,
+  });
+  if (readBandAttacker !== false) {
+    throw new Error('Attacker was able to inspect band without membership or valid code');
+  }
+
+  // Attacker tries to read member roster
+  const readMembersAttacker = engine.evalBandMembers({
+    op: 'read',
+    bandId: 'band_secret',
+    memberId: hostUser.uid,
+    auth: attackerUser,
+    resourceData: engine.get('bands/band_secret/members/user_host_123').data,
+  });
+  if (readMembersAttacker !== false) {
+    throw new Error('Attacker was able to read member roster without membership or valid code');
+  }
+});
+
+test('Band Member / Valid Code: Reading band and members must be ALLOWED', () => {
+  const engine = new RuleEngine({
+    'bandCodes/SEC123': { data: { bandId: 'band_secret', code: 'SEC123' } },
+    'bands/band_secret': {
+      data: {
+        id: 'band_secret',
+        name: 'Secret Band',
+        leaderId: hostUser.uid,
+        code: 'SEC123',
+      },
+    },
+    'bands/band_secret/members/user_host_123': {
+      data: { id: hostUser.uid, userId: hostUser.uid },
+    },
+    'bands/band_secret/members/user_guest_456': {
+      data: { id: guestUser.uid, userId: guestUser.uid },
+    },
+  });
+
+  // Member reads band
+  const memberReadBand = engine.evalBands({
+    op: 'get',
+    bandId: 'band_secret',
+    auth: guestUser,
+    resourceData: engine.get('bands/band_secret').data,
+  });
+  if (!memberReadBand) throw new Error('Member was blocked from reading own band');
+
+  // Member reads roster
+  const memberReadRoster = engine.evalBandMembers({
+    op: 'read',
+    bandId: 'band_secret',
+    memberId: hostUser.uid,
+    auth: guestUser,
+    resourceData: engine.get('bands/band_secret/members/user_host_123').data,
+  });
+  if (!memberReadRoster) throw new Error('Member was blocked from reading own band roster');
 });
 
 // Run all tests

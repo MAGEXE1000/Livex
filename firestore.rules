@@ -182,7 +182,10 @@ service cloud.firestore {
     // Band workspaces and repertoires
     match /bands/{bandId} {
       allow list: if false;
-      allow get: if isAuthenticated();
+      allow get: if isAuthenticated() && (
+        isBandMember(bandId) ||
+        (resource.data.code is string && exists(/databases/$(database)/documents/bandCodes/$(resource.data.code)))
+      );
       allow create: if isAuthenticated()
         && request.resource.data.leaderId == request.auth.uid
         && request.resource.data.id == bandId;
@@ -190,7 +193,12 @@ service cloud.firestore {
       allow delete: if isBandLeader(bandId);
 
       match /members/{memberId} {
-        allow read: if isAuthenticated();
+        allow read: if isAuthenticated() && (
+          isBandMember(bandId) ||
+          (exists(/databases/$(database)/documents/bands/$(bandId)) &&
+           get(/databases/$(database)/documents/bands/$(bandId)).data.code is string &&
+           exists(/databases/$(database)/documents/bandCodes/$(get(/databases/$(database)/documents/bands/$(bandId)).data.code)))
+        );
         allow create: if isAuthenticated() && (
           request.auth.uid == request.resource.data.userId ||
           isBandLeader(bandId)
