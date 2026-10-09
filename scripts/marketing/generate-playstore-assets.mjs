@@ -6,15 +6,17 @@
  * Automates the capture and compositing of official 1080x1920 px (9:16)
  * marketing screenshots for Google Play Store listing:
  *
- *   Slide 1: Livex Hub Workspace (Rehearsal suite overview)
+ *   Slide 1: Livex Hub Workspace (Rehearsal suite overview featuring Groovex)
  *   Slide 2: Chordex Chord Library (Open chord detail morph modal)
- *   Slide 3: Chordex 3 Live Modes in One Image (Left: Chords, Middle: Lyrics, Right: Both)
+ *   Slide 3: Chordex Live Prompter (Synchronized chords, lyrics & beat tracking)
  *   Slide 4: Drumex Multi-Track Step Sequencer (Populated beat with note hits)
- *   Slide 5: Stagex Stage Plot & PDF Export (Landscape stage plot + portrait PDF rider)
- *   Slide 6: Vocalex Exercises & Recording Takes (Guided exercises + waveform takes)
+ *   Slide 5: Stagex Interactive Stage Plot (Spatial stage grid with equipment nodes)
+ *   Slide 6: Vocalex Exercises (Guided vocal coaching routines & category list)
  *
- * Exclusions: Groovex is completely omitted per explicit user directive.
- * Aesthetics: Zero artificial badges/pills, pure AMOLED dark backdrops.
+ * Standards:
+ * - Single centered device frame per slide anchored at an identical vertical baseline
+ * - Uniform top headline margins and typography
+ * - Zero artificial badges/pills, pure AMOLED dark backdrops (#000000)
  */
 
 import puppeteer from 'puppeteer';
@@ -26,10 +28,10 @@ import { fileURLToPath } from 'url';
 import {
   buildHubSlideHtml,
   buildChordMorphSlideHtml,
-  buildThreeLiveModesSlideHtml,
+  buildLivePrompterSlideHtml,
   buildDrumexSlideHtml,
-  buildStagexPlotAndExportSlideHtml,
-  buildVocalexExercisesAndTakesSlideHtml,
+  buildStagexSlideHtml,
+  buildVocalexSlideHtml,
 } from './playstore/slide-templates.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -235,72 +237,7 @@ async function seedWorkspaceState(page) {
       }
     }
 
-    // 4. Seed Drumex Step Sequencer with illuminated note hits
-    if (window.useDrumStore) {
-      const drumStore = window.useDrumStore.getState();
-      const p = drumStore.patterns[0];
-      if (p && p.measures && p.measures[0]) {
-        const pId = p.id;
-        const mId = p.measures[0].id;
-        p.measures[0].hits = {};
-        [0, 6, 8, 10].forEach((s) => drumStore.simpleToggleHit(pId, mId, 'kick', s));
-        [4, 12].forEach((s) => drumStore.simpleToggleHit(pId, mId, 'snare', s));
-        [0, 2, 4, 6, 8, 10, 12, 14].forEach((s) => drumStore.simpleToggleHit(pId, mId, 'hihat-closed', s));
-        [0].forEach((s) => drumStore.simpleToggleHit(pId, mId, 'crash', s));
-      }
-    }
-
-    // 5. Seed Vocalex Takes (Recordings)
-    if (window.vocalexRepository) {
-      const dummyBlob = new Blob(['sample-audio-data'], { type: 'audio/webm' });
-      await window.vocalexRepository.saveTake({
-        id: 'take-chorus-1',
-        name: 'Lead Vocal — Chorus Harmony Take 3',
-        createdAt: Date.now() - 3600000,
-        durationMs: 42000,
-        audioBlob: dummyBlob,
-        waveformPeaks: [0.2, 0.5, 0.8, 0.6, 0.9, 0.7, 0.5, 0.8, 0.4, 0.6, 0.9, 0.7, 0.3, 0.2],
-        sampleRate: 48000,
-      });
-      await window.vocalexRepository.saveTake({
-        id: 'take-verse-2',
-        name: 'Acoustic Double — Verse 1 Guide',
-        createdAt: Date.now() - 7200000,
-        durationMs: 28000,
-        audioBlob: dummyBlob,
-        waveformPeaks: [0.1, 0.3, 0.5, 0.4, 0.7, 0.5, 0.3, 0.6, 0.4, 0.5, 0.6, 0.4, 0.2, 0.1],
-        sampleRate: 48000,
-      });
-      await window.vocalexRepository.saveTake({
-        id: 'take-main-3',
-        name: 'Main Vocal — Full Runthrough Take 1',
-        createdAt: Date.now() - 10800000,
-        durationMs: 185000,
-        audioBlob: dummyBlob,
-        waveformPeaks: [0.3, 0.6, 0.8, 0.7, 0.9, 0.8, 0.7, 0.5, 0.6, 0.8, 0.7, 0.4, 0.3, 0.1],
-        sampleRate: 48000,
-      });
-      await window.vocalexRepository.saveTake({
-        id: 'take-harm-4',
-        name: 'Backing Vocals — High Harmony D4',
-        createdAt: Date.now() - 14400000,
-        durationMs: 36000,
-        audioBlob: dummyBlob,
-        waveformPeaks: [0.2, 0.4, 0.7, 0.5, 0.8, 0.6, 0.4, 0.5, 0.7, 0.5, 0.3, 0.2, 0.1, 0.1],
-        sampleRate: 48000,
-      });
-      await window.vocalexRepository.saveTake({
-        id: 'take-bridge-5',
-        name: 'Bridge Ad-Lib — Warm Ambient Reverb',
-        createdAt: Date.now() - 18000000,
-        durationMs: 24000,
-        audioBlob: dummyBlob,
-        waveformPeaks: [0.1, 0.4, 0.6, 0.8, 0.7, 0.9, 0.5, 0.4, 0.6, 0.5, 0.3, 0.2, 0.1, 0.1],
-        sampleRate: 48000,
-      });
-    }
-
-    // 6. Seed Stagex Project (Stage plot & Technical Rider)
+    // 4. Seed Stagex Project with stage equipment nodes
     const stageProject = {
       schemaVersion: 9,
       name: 'Festival Main Stage Plot',
@@ -312,20 +249,20 @@ async function seedWorkspaceState(page) {
       stageDepth: 10,
       currentSceneIdx: 0,
       elements: [
-        { id: 'el-1', name: 'Drum Kit', label: 'DRUMS', icon: 'drum', type: 'Acoustic Drums', x: 325, y: 110, rotation: 0, scale: 100, channelId: 'CH-01', color: '#f59e0b', source: 'Mic', output: 'FOH' },
-        { id: 'el-2', name: 'Lead Vocal', label: 'LEAD VOCAL', icon: 'cx-vocalist', type: 'Wireless Mic', x: 325, y: 260, rotation: 0, scale: 100, channelId: 'CH-02', color: '#38bdf8', source: 'Mic', output: 'FOH' },
-        { id: 'el-3', name: 'Guitar', label: 'GUITAR', icon: 'cx-guitarist', type: 'Electric Guitar', x: 180, y: 220, rotation: 0, scale: 100, channelId: 'CH-03', color: '#10b981', source: 'Mic', output: 'FOH' },
-        { id: 'el-4', name: 'Keys', label: 'KEYBOARD', icon: 'cx-keyboardist', type: 'Keyboard DI', x: 470, y: 220, rotation: 0, scale: 100, channelId: 'CH-04', color: '#a855f7', source: 'DI', output: 'FOH' },
+        { id: 'el-1', name: 'Drum Kit', label: 'DRUMS', icon: 'drum', type: 'Acoustic Drums', x: 200, y: 70, rotation: 0, scale: 100, channelId: 'CH-01', color: '#f59e0b', source: 'Mic', output: 'FOH' },
+        { id: 'el-2', name: 'Lead Vocal', label: 'LEAD VOCAL', icon: 'cx-vocalist', type: 'Wireless Mic', x: 200, y: 170, rotation: 0, scale: 100, channelId: 'CH-02', color: '#38bdf8', source: 'Mic', output: 'FOH' },
+        { id: 'el-3', name: 'Guitar', label: 'GUITAR', icon: 'cx-guitarist', type: 'Electric Guitar', x: 90, y: 140, rotation: 0, scale: 100, channelId: 'CH-03', color: '#10b981', source: 'Mic', output: 'FOH' },
+        { id: 'el-4', name: 'Keys', label: 'KEYBOARD', icon: 'cx-keyboardist', type: 'Keyboard DI', x: 310, y: 140, rotation: 0, scale: 100, channelId: 'CH-04', color: '#a855f7', source: 'DI', output: 'FOH' },
       ],
       scenes: [
         {
           id: 's1',
           name: 'Main Stage',
           elements: [
-            { id: 'el-1', name: 'Drum Kit', label: 'DRUMS', icon: 'drum', type: 'Acoustic Drums', x: 325, y: 110, rotation: 0, scale: 100, channelId: 'CH-01', color: '#f59e0b', source: 'Mic', output: 'FOH' },
-            { id: 'el-2', name: 'Lead Vocal', label: 'LEAD VOCAL', icon: 'cx-vocalist', type: 'Wireless Mic', x: 325, y: 260, rotation: 0, scale: 100, channelId: 'CH-02', color: '#38bdf8', source: 'Mic', output: 'FOH' },
-            { id: 'el-3', name: 'Guitar', label: 'GUITAR', icon: 'cx-guitarist', type: 'Electric Guitar', x: 180, y: 220, rotation: 0, scale: 100, channelId: 'CH-03', color: '#10b981', source: 'Mic', output: 'FOH' },
-            { id: 'el-4', name: 'Keys', label: 'KEYBOARD', icon: 'cx-keyboardist', type: 'Keyboard DI', x: 470, y: 220, rotation: 0, scale: 100, channelId: 'CH-04', color: '#a855f7', source: 'DI', output: 'FOH' },
+            { id: 'el-1', name: 'Drum Kit', label: 'DRUMS', icon: 'drum', type: 'Acoustic Drums', x: 200, y: 70, rotation: 0, scale: 100, channelId: 'CH-01', color: '#f59e0b', source: 'Mic', output: 'FOH' },
+            { id: 'el-2', name: 'Lead Vocal', label: 'LEAD VOCAL', icon: 'cx-vocalist', type: 'Wireless Mic', x: 200, y: 170, rotation: 0, scale: 100, channelId: 'CH-02', color: '#38bdf8', source: 'Mic', output: 'FOH' },
+            { id: 'el-3', name: 'Guitar', label: 'GUITAR', icon: 'cx-guitarist', type: 'Electric Guitar', x: 90, y: 140, rotation: 0, scale: 100, channelId: 'CH-03', color: '#10b981', source: 'Mic', output: 'FOH' },
+            { id: 'el-4', name: 'Keys', label: 'KEYBOARD', icon: 'cx-keyboardist', type: 'Keyboard DI', x: 310, y: 140, rotation: 0, scale: 100, channelId: 'CH-04', color: '#a855f7', source: 'DI', output: 'FOH' },
           ],
           connections: [],
           nextId: 5,
@@ -345,7 +282,6 @@ async function seedWorkspaceState(page) {
 
 async function ensureNoModals(page) {
   await page.evaluate(() => {
-    // Purge any lingering modal portal elements or backdrops in document.body
     document.querySelectorAll('.sc-morphing-panel').forEach((p) => {
       const topContainer = p.closest('div[style*="99999"]') || p.parentElement;
       if (topContainer) topContainer.remove();
@@ -363,19 +299,21 @@ async function ensureNoModals(page) {
 async function captureAppScreens(page) {
   console.log('\n--- CAPTURING RAW HIGH-DPI VIEWS ---');
 
-  // 1. Hub Workspace View (Groovex strictly hidden)
-  console.log('[CAPTURE] 1/10 Capturing Livex Hub Workspace...');
+  // 1. Hub Workspace View (Groovex included with "Multitrack stem mixer")
+  console.log('[CAPTURE] 1/6 Capturing Livex Hub Workspace (including Groovex)...');
   await page.setViewport({ width: 412, height: 915, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
   await page.evaluate(() => {
     window.NavigationDispatcher.reset([{ app: 'hub', tab: 'home' }]);
   });
   await sleep(1500);
   await page.evaluate(() => {
-    // Hide Groovex module button/card in Hub per strict project directive
-    const allCards = Array.from(document.querySelectorAll('button, div[role="button"], a'));
-    for (const el of allCards) {
-      if (el.textContent && el.textContent.includes('Groovex')) {
-        el.style.display = 'none';
+    // Ensure Groovex card subtitle matches requested descriptor
+    const card = document.querySelector('button[data-app="groovex"]');
+    if (card) {
+      for (const s of card.querySelectorAll('span')) {
+        if (s.textContent && s.textContent.toLowerCase().includes('mixer')) {
+          s.textContent = 'Multitrack stem mixer';
+        }
       }
     }
   });
@@ -384,7 +322,7 @@ async function captureAppScreens(page) {
   console.log(`✓ Saved: ${rawHubPath}`);
 
   // 2. Chordex Library with Open Morph Modal
-  console.log('[CAPTURE] 2/10 Capturing Chordex Library with Open Chord Morph...');
+  console.log('[CAPTURE] 2/6 Capturing Chordex Library with Open Chord Morph...');
   await page.evaluate(() => {
     window.NavigationDispatcher.reset([{ app: 'chordex', page: 'library' }]);
   });
@@ -398,7 +336,7 @@ async function captureAppScreens(page) {
   await page.screenshot({ path: rawChordMorphPath });
   console.log(`✓ Saved: ${rawChordMorphPath}`);
 
-  // Cleanly close the modal so subsequent views are unaffected
+  // Cleanly close modal
   await page.evaluate(() => {
     const closeBtn =
       document.querySelector('.sc-morphing-panel button[aria-label="Close"]') ||
@@ -409,11 +347,11 @@ async function captureAppScreens(page) {
   await ensureNoModals(page);
   await sleep(300);
 
-  // 3. Chordex 3 Live Modes (Chords, Lyrics, Both)
-  console.log('[CAPTURE] 3/10 Capturing Live Chords View...');
+  // 3. Chordex Live Performance Prompter (Both view: Synchronized chords & lyrics)
+  console.log('[CAPTURE] 3/6 Capturing Live Prompter (Synchronized Both view)...');
   await ensureNoModals(page);
   await page.evaluate(() => {
-    localStorage.setItem('chordex_live_display_mode', 'chords');
+    localStorage.setItem('chordex_live_display_mode', 'both');
     const store = window.useChordStore.getState();
     const presets = store.presets || [];
     const venezia = presets.find((p) => p.name === 'Venezia') || presets[0];
@@ -422,52 +360,6 @@ async function captureAppScreens(page) {
   });
   await sleep(800);
   await page.evaluate(() => {
-    const chordsBtn =
-      document.querySelector('[data-testid="view-mode-chords"]') ||
-      Array.from(document.querySelectorAll('button')).find((x) => x.textContent?.trim() === 'Chords');
-    if (chordsBtn) chordsBtn.click();
-    window.dispatchEvent(new Event('livex:open-live-spectator'));
-  });
-  await sleep(1200);
-  await ensureNoModals(page);
-  const rawLiveChordsPath = path.join(RAW_CAPTURE_DIR, 'v3-live-chords.png');
-  await page.screenshot({ path: rawLiveChordsPath });
-  console.log(`✓ Saved: ${rawLiveChordsPath}`);
-
-  // Exit live mode
-  await page.evaluate(() => {
-    const backBtn = document.querySelector('[data-testid="live-mode-back-btn"]');
-    if (backBtn) backBtn.click();
-  });
-  await sleep(600);
-
-  console.log('[CAPTURE] 4/10 Capturing Live Lyrics View (Teleprompter)...');
-  await ensureNoModals(page);
-  await page.evaluate(() => {
-    localStorage.setItem('chordex_live_display_mode', 'lyrics');
-    const lyricsBtn =
-      document.querySelector('[data-testid="view-mode-lyrics"]') ||
-      Array.from(document.querySelectorAll('button')).find((x) => x.textContent?.trim() === 'Lyrics');
-    if (lyricsBtn) lyricsBtn.click();
-    window.dispatchEvent(new Event('livex:open-live-spectator'));
-  });
-  await sleep(1200);
-  await ensureNoModals(page);
-  const rawLiveLyricsPath = path.join(RAW_CAPTURE_DIR, 'v3-live-lyrics.png');
-  await page.screenshot({ path: rawLiveLyricsPath });
-  console.log(`✓ Saved: ${rawLiveLyricsPath}`);
-
-  // Exit live mode
-  await page.evaluate(() => {
-    const backBtn = document.querySelector('[data-testid="live-mode-back-btn"]');
-    if (backBtn) backBtn.click();
-  });
-  await sleep(600);
-
-  console.log('[CAPTURE] 5/10 Capturing Live Both View (Synchronized)...');
-  await ensureNoModals(page);
-  await page.evaluate(() => {
-    localStorage.setItem('chordex_live_display_mode', 'both');
     const bothBtn =
       document.querySelector('[data-testid="view-mode-both"]') ||
       Array.from(document.querySelectorAll('button')).find((x) => x.textContent?.trim() === 'Both');
@@ -476,9 +368,9 @@ async function captureAppScreens(page) {
   });
   await sleep(1200);
   await ensureNoModals(page);
-  const rawLiveBothPath = path.join(RAW_CAPTURE_DIR, 'v3-live-both.png');
-  await page.screenshot({ path: rawLiveBothPath });
-  console.log(`✓ Saved: ${rawLiveBothPath}`);
+  const rawLivePrompterPath = path.join(RAW_CAPTURE_DIR, '03-live-prompter.png');
+  await page.screenshot({ path: rawLivePrompterPath });
+  console.log(`✓ Saved: ${rawLivePrompterPath}`);
 
   // Exit live mode
   await page.evaluate(() => {
@@ -489,34 +381,88 @@ async function captureAppScreens(page) {
   await ensureNoModals(page);
 
   // 4. Drumex Step Sequencer with Note Hits
-  console.log('[CAPTURE] 6/10 Capturing Drumex Step Sequencer with notes...');
+  console.log('[CAPTURE] 4/6 Capturing Drumex Step Sequencer with notes...');
   await ensureNoModals(page);
   await page.evaluate(() => {
     window.NavigationDispatcher.reset([{ app: 'drumex' }]);
     window.NavigationDispatcher.push({ app: 'drumex', page: 'songs', subView: 'editor' });
   });
-  await sleep(1600);
+  await sleep(1500);
+
+  // Seed illuminated note hits into the active pattern via React fiber store instance
+  const seedResult = await page.evaluate(() => {
+    const containers = Array.from(document.querySelectorAll('div[class*="no-scrollbar"]'));
+    let foundStore = null;
+    let containerIndex = -1;
+
+    for (let i = 0; i < containers.length; i++) {
+      const container = containers[i];
+      const fiberKey = Object.keys(container).find(
+        (k) => k.startsWith('__reactFiber') || k.startsWith('__reactInternalInstance')
+      );
+      let curr = fiberKey ? container[fiberKey] : null;
+      while (curr && !foundStore) {
+        if (curr.memoizedState) {
+          let s = curr.memoizedState;
+          while (s) {
+            if (s.memoizedState && typeof s.memoizedState === 'object' && s.memoizedState.patterns) {
+              foundStore = s.memoizedState;
+              containerIndex = i;
+              break;
+            }
+            s = s.next;
+          }
+        }
+        if (curr.memoizedProps && curr.memoizedProps.patterns) {
+          foundStore = curr.memoizedProps;
+          containerIndex = i;
+          break;
+        }
+        curr = curr.return;
+      }
+      if (foundStore) break;
+    }
+
+    if (!foundStore) return { error: 'no store found', totalContainers: containers.length };
+
+    if (foundStore.patterns && foundStore.patterns[0]) {
+      const p = foundStore.patterns[0];
+      const pId = p.id;
+      const mId = p.measures[0].id;
+      p.measures[0].hits = {};
+      [0, 6, 8, 10].forEach((s) => foundStore.simpleToggleHit(pId, mId, 'kick', s));
+      [4, 12].forEach((s) => foundStore.simpleToggleHit(pId, mId, 'snare', s));
+      [0, 2, 4, 6, 8, 10, 12, 14].forEach((s) => foundStore.simpleToggleHit(pId, mId, 'hihat-closed', s));
+      [0].forEach((s) => foundStore.simpleToggleHit(pId, mId, 'crash', s));
+      return { success: true, containerIndex, pId, mId };
+    }
+    return { error: 'no pattern 0' };
+  });
+  console.log('[DEBUG] Drumex seed result:', seedResult);
+  await sleep(1200);
   await ensureNoModals(page);
-  const rawDrumexPath = path.join(RAW_CAPTURE_DIR, 'v4-drumex-sequencer.png');
+  const rawDrumexPath = path.join(RAW_CAPTURE_DIR, '04-drumex-sequencer.png');
   await page.screenshot({ path: rawDrumexPath });
   console.log(`✓ Saved: ${rawDrumexPath}`);
 
-  // 5. Stagex Stage Plot in Landscape Orientation
-  console.log('[CAPTURE] 7/10 Capturing Stagex Stage Plot in Landscape...');
-  await page.setViewport({ width: 915, height: 412, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
+  // 5. Stagex Interactive Stage Plot in Portrait Orientation
+  console.log('[CAPTURE] 5/6 Capturing Stagex Stage Plot with equipment nodes...');
   await ensureNoModals(page);
   await page.evaluate(() => {
     window.NavigationDispatcher.reset([{ app: 'stagex' }]);
     window.NavigationDispatcher.push({ app: 'stagex', page: 'Editor' });
   });
-  await sleep(1500);
+  await sleep(2000);
 
-  // Trigger iframe loadSaved & renderAll
+  // Trigger iframe dark AMOLED mode, loadSaved & renderAll
   const iframeHandle = await page.$('iframe');
   if (iframeHandle) {
     const frame = await iframeHandle.contentFrame();
     if (frame) {
       await frame.evaluate(() => {
+        if (typeof injectTheme === 'function') injectTheme('dark');
+        if (typeof injectAmoled === 'function') injectAmoled(true);
+        if (typeof updateCanvasBg === 'function') updateCanvasBg('#000000');
         if (typeof loadSaved === 'function') loadSaved();
         if (typeof renderAll === 'function') renderAll();
       });
@@ -524,25 +470,12 @@ async function captureAppScreens(page) {
     }
   }
   await ensureNoModals(page);
-  const rawStagePlotLandscapePath = path.join(RAW_CAPTURE_DIR, 'test-stagex-landscape-pure.png');
-  await page.screenshot({ path: rawStagePlotLandscapePath });
-  console.log(`✓ Saved: ${rawStagePlotLandscapePath}`);
+  const rawStagePlotPath = path.join(RAW_CAPTURE_DIR, '05-stagex-plot.png');
+  await page.screenshot({ path: rawStagePlotPath });
+  console.log(`✓ Saved: ${rawStagePlotPath}`);
 
-  // 6. Stagex PDF Export Sheet (Portrait)
-  console.log('[CAPTURE] 8/10 Capturing Stagex Technical Rider PDF Export...');
-  await page.setViewport({ width: 412, height: 915, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
-  await ensureNoModals(page);
-  await page.evaluate(() => {
-    window.NavigationDispatcher.push({ app: 'stagex', page: 'Export' });
-  });
-  await sleep(1500);
-  await ensureNoModals(page);
-  const rawStageExportPath = path.join(RAW_CAPTURE_DIR, 'v4-stagex-export.png');
-  await page.screenshot({ path: rawStageExportPath });
-  console.log(`✓ Saved: ${rawStageExportPath}`);
-
-  // 7. Vocalex Coach Exercises
-  console.log('[CAPTURE] 9/10 Capturing Vocalex Coach Exercises...');
+  // 6. Vocalex Guided Exercises
+  console.log('[CAPTURE] 6/6 Capturing Vocalex Guided Exercises list...');
   await ensureNoModals(page);
   await page.evaluate(() => {
     window.NavigationDispatcher.reset([{ app: 'vocalex' }]);
@@ -556,33 +489,17 @@ async function captureAppScreens(page) {
   });
   await sleep(1000);
   await ensureNoModals(page);
-  const rawVocalExercisesPath = path.join(RAW_CAPTURE_DIR, 'v3-vocalex-exercises.png');
+  const rawVocalExercisesPath = path.join(RAW_CAPTURE_DIR, '06-vocalex-exercises.png');
   await page.screenshot({ path: rawVocalExercisesPath });
   console.log(`✓ Saved: ${rawVocalExercisesPath}`);
-
-  // 8. Vocalex Takes (Recordings)
-  console.log('[CAPTURE] 10/10 Capturing Vocalex Takes (Recordings)...');
-  await ensureNoModals(page);
-  await page.evaluate(() => {
-    window.NavigationDispatcher.push({ app: 'vocalex', page: 'takes' });
-  });
-  await sleep(1400);
-  await ensureNoModals(page);
-  const rawVocalTakesPath = path.join(RAW_CAPTURE_DIR, 'v4-vocalex-takes.png');
-  await page.screenshot({ path: rawVocalTakesPath });
-  console.log(`✓ Saved: ${rawVocalTakesPath}`);
 
   return {
     hubPath: rawHubPath,
     chordMorphPath: rawChordMorphPath,
-    chordsPath: rawLiveChordsPath,
-    prompterPath: rawLiveLyricsPath,
-    combinedPath: rawLiveBothPath,
+    livePrompterPath: rawLivePrompterPath,
     drumexPath: rawDrumexPath,
-    stagePlotLandscapePath: rawStagePlotLandscapePath,
-    stageExportPath: rawStageExportPath,
+    stagePlotPath: rawStagePlotPath,
     vocalExercisesPath: rawVocalExercisesPath,
-    vocalTakesPath: rawVocalTakesPath,
   };
 }
 
@@ -626,8 +543,8 @@ async function compositeSlide(browser, { outputPath, html, slideName }) {
 async function main() {
   const startTime = Date.now();
   console.log('========================================================================');
-  console.log('      LIVEX GOOGLE PLAY STORE — OFFICIAL SCREENSHOT GENERATOR           ');
-  console.log('      Target: 1080 x 1920 px (9:16) Ultra-Slim Pixel 9 Pro Frames       ');
+  console.log('      LIVEX GOOGLE PLAY STORE — STANDARDIZED SCREENSHOT GENERATOR       ');
+  console.log('      Target: 1080 x 1920 px (9:16) Uniform Centered Device Frames      ');
   console.log('      6 Canonical Slides (Zero AI-slop pills, Pure AMOLED Dark)        ');
   console.log('========================================================================');
 
@@ -670,7 +587,7 @@ async function main() {
     const rawCaptures = await captureAppScreens(page);
     await page.close();
 
-    console.log('\n--- COMPOSITING PRODUCTION PLAY STORE ASSETS (1080x1920) ---');
+    console.log('\n--- COMPOSITING STANDARDIZED PLAY STORE ASSETS (1080x1920) ---');
 
     // ── SLIDE 1: Livex Hub Workspace ──
     await compositeSlide(browser, {
@@ -694,16 +611,14 @@ async function main() {
       }),
     });
 
-    // ── SLIDE 3: Chordex 3 Live Performance Modes (Chords, Lyrics, Both) ──
+    // ── SLIDE 3: Chordex Live Performance Prompter ──
     await compositeSlide(browser, {
       outputPath: path.join(PLAYSTORE_DIR, '03-live-prompter-chords-both.png'),
-      slideName: 'Slide 3: 3 Live Performance Modes',
-      html: buildThreeLiveModesSlideHtml({
-        headingLine1: '3 live performance modes.',
-        headingLine2: 'Chords, lyrics, or both synchronized.',
-        chordsImageBase64: toBase64DataUrl(rawCaptures.chordsPath),
-        prompterImageBase64: toBase64DataUrl(rawCaptures.prompterPath),
-        combinedImageBase64: toBase64DataUrl(rawCaptures.combinedPath),
+      slideName: 'Slide 3: Live Prompter',
+      html: buildLivePrompterSlideHtml({
+        headingLine1: 'Live performance prompter.',
+        headingLine2: 'Synchronized lyrics, chords & beat tracking.',
+        imageBase64: toBase64DataUrl(rawCaptures.livePrompterPath),
       }),
     });
 
@@ -718,27 +633,25 @@ async function main() {
       }),
     });
 
-    // ── SLIDE 5: Stagex Stage Plot & PDF Technical Rider ──
+    // ── SLIDE 5: Stagex Interactive Stage Plot ──
     await compositeSlide(browser, {
       outputPath: path.join(PLAYSTORE_DIR, '05-stagex-plot-export.png'),
-      slideName: 'Slide 5: Stagex Plot & PDF Export',
-      html: buildStagexPlotAndExportSlideHtml({
+      slideName: 'Slide 5: Stagex Interactive Stage Plot',
+      html: buildStagexSlideHtml({
         headingLine1: 'Visual stage plots & tech riders.',
-        headingLine2: 'Interactive layout with instant PDF export.',
-        landscapePlotImageBase64: toBase64DataUrl(rawCaptures.stagePlotLandscapePath),
-        portraitExportImageBase64: toBase64DataUrl(rawCaptures.stageExportPath),
+        headingLine2: 'Interactive stage grid & equipment layouts.',
+        imageBase64: toBase64DataUrl(rawCaptures.stagePlotPath),
       }),
     });
 
-    // ── SLIDE 6: Vocalex Exercises & Recording Takes ──
+    // ── SLIDE 6: Vocalex Guided Exercises ──
     await compositeSlide(browser, {
       outputPath: path.join(PLAYSTORE_DIR, '06-vocalex-exercises-takes.png'),
-      slideName: 'Slide 6: Vocalex Exercises & Takes',
-      html: buildVocalexExercisesAndTakesSlideHtml({
-        headingLine1: 'Vocal coach & recording takes.',
-        headingLine2: 'Guided training routines & lossless audio.',
-        exercisesImageBase64: toBase64DataUrl(rawCaptures.vocalExercisesPath),
-        takesImageBase64: toBase64DataUrl(rawCaptures.vocalTakesPath),
+      slideName: 'Slide 6: Vocalex Exercises',
+      html: buildVocalexSlideHtml({
+        headingLine1: 'Vocal coach & exercises.',
+        headingLine2: 'Guided warmup routines & vocal training.',
+        imageBase64: toBase64DataUrl(rawCaptures.vocalExercisesPath),
       }),
     });
 
