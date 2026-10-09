@@ -125,6 +125,8 @@ export default defineConfig(async ({ command, mode }) => {
               if (id.includes('/@supabase/')) return 'supabase';
               if (id.includes('/firebase/') || id.includes('/@firebase/')) return 'firebase';
               if (id.includes('/motion/') || id.includes('/framer-motion/')) return 'motion-vendor';
+              if (id.includes('/lucide-react/')) return 'lucide-icons';
+              if (id.includes('/@tolgee/')) return 'tolgee';
             }
           },
         },

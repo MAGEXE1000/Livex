@@ -1,4 +1,4 @@
-import { lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   useIsWebDesktop,
   useNavigationStore,
@@ -18,8 +18,27 @@ import {
   triggerIntroReveal,
 } from '@workspace/ui-shared';
 
-const SettingsPanel = lazy(() => import('@workspace/ui-shared/src/panels/SettingsPanel'));
+import {
+  WebSidebarLayout,
+  SidebarProvider,
+  SidebarInset,
+  useSidebar,
+} from '@workspace/ui-web';
 
+import ErrorBoundary from './components/ErrorBoundary';
+
+const LivexLandingPage = lazy(() =>
+  import('@workspace/ui-web').then((m) => ({ default: m.LivexLandingPage }))
+);
+const NotFoundPage = lazy(() =>
+  import('@workspace/ui-web').then((m) => ({ default: m.NotFoundPage }))
+);
+const ErrorFallbackPage = lazy(() =>
+  import('@workspace/ui-web').then((m) => ({ default: m.ErrorFallbackPage }))
+);
+const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'));
+
+const SettingsPanel = lazy(() => import('@workspace/ui-shared/src/panels/SettingsPanel'));
 const DrumEditor = lazy(() => import('@workspace/ui-shared/src/features/drumex/pages/DrumEditor'));
 const GroovexApp = lazy(() => import('@workspace/ui-shared/src/features/groovex/pages/GroovexApp'));
 const VocalexApp = lazy(() => import('@workspace/ui-shared/src/features/vocalex/pages/VocalexApp'));
@@ -33,21 +52,47 @@ const SaxophonePracticePanel = lazy(() =>
   }))
 );
 
-import {
-  WebSidebarLayout,
-  SidebarProvider,
-  SidebarInset,
-  useSidebar,
-  LivexLandingPage,
-} from '@workspace/ui-web';
-
-import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
-
 import './index.css';
-
 
 if (typeof window !== 'undefined') {
   (window as any).NavigationDispatcher = NavigationDispatcher;
+}
+
+function resolveRoute(rawPath: string): string {
+  if (typeof window === 'undefined') return '/';
+  let path = rawPath || '/';
+
+  if (path.startsWith('/drums/songs')) {
+    path = path.replace('/drums/songs', '/drumex/beats');
+  } else if (path.startsWith('/chords')) {
+    path = path.replace(/^\/chords/, '/chordex');
+  } else if (path.startsWith('/drums')) {
+    path = path.replace(/^\/drums/, '/drumex');
+  } else if (path.startsWith('/stage')) {
+    path = path.replace(/^\/stage/, '/stagex');
+  }
+
+  if (
+    path === '/app' ||
+    path.startsWith('/app/') ||
+    path.startsWith('/chordex') ||
+    path.startsWith('/drumex') ||
+    path.startsWith('/stagex') ||
+    path.startsWith('/groovex') ||
+    path.startsWith('/vocalex')
+  ) {
+    return '/app';
+  }
+  if (path === '/privacy' || path === '/privacy-policy') {
+    return '/privacy';
+  }
+  if (path === '/error-test') {
+    return '/error-test';
+  }
+  if (path === '/' || path === '') {
+    return '/';
+  }
+  return '/404';
 }
 
 function ChordexWebSidebar() {
@@ -73,6 +118,12 @@ function ChordexWebSidebar() {
   );
 }
 
+const RouteLoadingSkeleton = () => (
+  <div className="min-h-[100dvh] w-full bg-black text-white flex items-center justify-center p-6">
+    <div className="w-6 h-6 rounded-full border-2 border-white/20 border-t-white animate-spin" />
+  </div>
+);
+
 export default function App() {
   const theme = useSettingsStore((s) => s.settings.theme);
   const globalAmoled = useSettingsStore((s) => s.settings.amoledMode);
@@ -88,36 +139,7 @@ export default function App() {
 
   const [route, setRoute] = useState(() => {
     if (typeof window === 'undefined') return '/';
-    let path = window.location.pathname;
-
-    if (path.startsWith('/drums/songs')) {
-      path = path.replace('/drums/songs', '/drumex/beats');
-      window.history.replaceState({}, '', path);
-    } else if (path.startsWith('/chords')) {
-      path = path.replace(/^\/chords/, '/chordex');
-      window.history.replaceState({}, '', path);
-    } else if (path.startsWith('/drums')) {
-      path = path.replace(/^\/drums/, '/drumex');
-      window.history.replaceState({}, '', path);
-    } else if (path.startsWith('/stage')) {
-      path = path.replace(/^\/stage/, '/stagex');
-      window.history.replaceState({}, '', path);
-    }
-
-    if (
-      path === '/app' ||
-      path.startsWith('/app/') ||
-      path.startsWith('/chordex') ||
-      path.startsWith('/drumex') ||
-      path.startsWith('/stagex') ||
-      path.startsWith('/groovex') ||
-      path.startsWith('/vocalex')
-    )
-      return '/app';
-    if (path === '/privacy' || path === '/privacy-policy') {
-      return '/privacy';
-    }
-    return '/';
+    return resolveRoute(window.location.pathname);
   });
 
   const [showLaunchOverlay, setShowLaunchOverlay] = useState(() => {
@@ -131,27 +153,12 @@ export default function App() {
 
   const navigateTo = (path: string) => {
     window.history.pushState({}, '', path);
-    setRoute(path);
+    setRoute(resolveRoute(path));
   };
 
   useEffect(() => {
     const handlePopState = () => {
-      const path = window.location.pathname;
-      if (
-        path === '/app' ||
-        path.startsWith('/app/') ||
-        path.startsWith('/chordex') ||
-        path.startsWith('/drumex') ||
-        path.startsWith('/stagex') ||
-        path.startsWith('/groovex') ||
-        path.startsWith('/vocalex')
-      ) {
-        setRoute('/app');
-      } else if (path === '/privacy' || path === '/privacy-policy') {
-        setRoute('/privacy');
-      } else {
-        setRoute('/');
-      }
+      setRoute(resolveRoute(window.location.pathname));
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
@@ -191,10 +198,30 @@ export default function App() {
   useEffect(() => {
     if (route === '/') {
       document.documentElement.classList.add('landing-route', 'dark', 'amoled');
-      document.documentElement.classList.remove('app-route', 'privacy-route', 'light');
+      document.documentElement.classList.remove('app-route', 'privacy-route', 'error-route', 'light');
     } else if (route === '/privacy') {
       document.documentElement.classList.add('privacy-route');
-      document.documentElement.classList.remove('landing-route', 'app-route');
+      document.documentElement.classList.remove('landing-route', 'app-route', 'error-route');
+
+      const intro = document.getElementById('intro');
+      if (intro) {
+        intro.style.display = 'none';
+        if (intro.parentNode) intro.parentNode.removeChild(intro);
+      }
+      (window as any).__introDone = true;
+      window.dispatchEvent(new Event('livex-intro-done'));
+      window.dispatchEvent(new Event('studio-intro-done'));
+      triggerIntroReveal();
+    } else if (route === '/404' || route === '/error-test') {
+      document.documentElement.classList.add('error-route');
+      document.documentElement.classList.remove('landing-route', 'app-route', 'privacy-route');
+      if (theme === 'light') {
+        document.documentElement.classList.add('light');
+        document.documentElement.classList.remove('dark', 'amoled');
+      } else {
+        document.documentElement.classList.add('dark', 'amoled');
+        document.documentElement.classList.remove('light');
+      }
 
       const intro = document.getElementById('intro');
       if (intro) {
@@ -207,7 +234,7 @@ export default function App() {
       triggerIntroReveal();
     } else {
       document.documentElement.classList.add('app-route');
-      document.documentElement.classList.remove('landing-route', 'privacy-route');
+      document.documentElement.classList.remove('landing-route', 'privacy-route', 'error-route');
 
       const intro = document.getElementById('intro');
       if (intro) {
@@ -262,33 +289,44 @@ export default function App() {
     );
   }, [showLaunchOverlay, handleLaunchOverlayComplete, isLight, isAmoled]);
 
-  if (route === '/') {
-    return <LivexLandingPage navigateTo={navigateTo} />;
-  }
-
-  if (route === '/privacy') {
-    return <PrivacyPolicyPage navigateTo={navigateTo} />;
-  }
-
   return (
-    <SharedAppShell
-      isWeb={true}
-      wrapProviders={(children) =>
-        isWebDesktop ? (
-          <SidebarProvider>
-            <WebSidebarLayout shouldHideSidebar={false} />
-            <SidebarInset>{children}</SidebarInset>
-          </SidebarProvider>
-        ) : (
-          <>{children}</>
-        )
-      }
-      renderLaunchOverlay={showLaunchOverlay ? renderLaunchOverlay : undefined}
-      renderBottomNav={
-        !isWebDesktop && !showLaunchOverlay ? () => <BottomNavigationController /> : undefined
-      }
-      hubElement={<LivexHub />}
-      subApps={subApps}
-    />
+    <ErrorBoundary>
+      <Suspense fallback={<RouteLoadingSkeleton />}>
+        {route === '/' && <LivexLandingPage navigateTo={navigateTo} />}
+
+        {route === '/privacy' && <PrivacyPolicyPage navigateTo={navigateTo} />}
+
+        {route === '/404' && <NotFoundPage navigateTo={navigateTo} />}
+
+        {route === '/error-test' && (
+          <ErrorFallbackPage
+            error={new Error('Simulated Audio Buffer Underrun: DSP stream interrupted on client worker')}
+            onReload={() => navigateTo('/')}
+          />
+        )}
+
+        {route === '/app' && (
+          <SharedAppShell
+            isWeb={true}
+            wrapProviders={(children) =>
+              isWebDesktop ? (
+                <SidebarProvider>
+                  <WebSidebarLayout shouldHideSidebar={false} />
+                  <SidebarInset>{children}</SidebarInset>
+                </SidebarProvider>
+              ) : (
+                <>{children}</>
+              )
+            }
+            renderLaunchOverlay={showLaunchOverlay ? renderLaunchOverlay : undefined}
+            renderBottomNav={
+              !isWebDesktop && !showLaunchOverlay ? () => <BottomNavigationController /> : undefined
+            }
+            hubElement={<LivexHub />}
+            subApps={subApps}
+          />
+        )}
+      </Suspense>
+    </ErrorBoundary>
   );
 }

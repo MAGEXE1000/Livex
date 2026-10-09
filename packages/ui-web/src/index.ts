@@ -6,3 +6,7 @@ export * from './landing/components/LivexFeatureSkeletons';
 export * from './landing/components/LivexScreenMockups';
 export { TiltedGridHero, default as DefaultTiltedGridHero } from './components/ui/tilted-grid-hero';
 export * from './components/ui/tilted-grid-hero';
+export { default as NotFoundPage } from './pages/NotFoundPage';
+export type { NotFoundPageProps } from './pages/NotFoundPage';
+export { default as ErrorFallbackPage } from './pages/ErrorFallbackPage';
+export type { ErrorFallbackPageProps } from './pages/ErrorFallbackPage';
