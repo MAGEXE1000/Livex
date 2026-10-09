@@ -56,7 +56,7 @@ jobs:
           pnpm --filter @workspace/studio-android android:sync
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.language == 'java-kotlin' && 'manual' || 'none' }}
@@ -70,4 +70,4 @@ jobs:
           ./gradlew clean assembleDebug --rerun-tasks --no-daemon --no-build-cache
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@v4
