@@ -331,3 +331,25 @@ export function sanitizeWorkspacePayload(payload: any): any {
 
   return payload;
 }
+
+export interface SanitizedErrorResponse {
+  error: string;
+  code: string;
+  message: string;
+}
+
+/**
+ * Strips internal stack traces, filesystem paths, and secrets from errors,
+ * returning a safe, structured object suitable for client responses.
+ */
+export function formatSanitizedError(
+  _err: unknown,
+  fallbackMessage = 'An error occurred while processing the request.',
+  code = 'INTERNAL_ERROR'
+): SanitizedErrorResponse {
+  return {
+    error: 'Internal Server Error',
+    code,
+    message: fallbackMessage,
+  };
+}

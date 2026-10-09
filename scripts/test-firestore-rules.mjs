@@ -196,6 +196,40 @@ class RuleEngine {
     return false;
   }
 
+  // Evaluates authorization for /bandCodes/{code}
+  evalBandCodes({ op, code, auth, resourceData, requestData }) {
+    const isAuthenticated = auth !== null && auth.uid !== undefined;
+
+    if (op === 'list') {
+      return false;
+    }
+
+    if (op === 'get') {
+      return isAuthenticated && code.length === 6;
+    }
+
+    if (op === 'create') {
+      return isAuthenticated &&
+        code.length === 6 &&
+        typeof requestData?.bandId === 'string' &&
+        requestData.bandId.length > 0;
+    }
+
+    if (op === 'update') {
+      return false; // Immutable: allow update: if false;
+    }
+
+    if (op === 'delete') {
+      if (!isAuthenticated) return false;
+      const bandPath = `bands/${resourceData?.bandId}`;
+      if (!this.exists(bandPath)) return true;
+      const band = this.get(bandPath);
+      return band?.data?.leaderId === auth.uid;
+    }
+
+    return false;
+  }
+
   // Evaluates authorization for /bands/{bandId}
   evalBands({ op, bandId, auth, resourceData, requestData }) {
     const isAuthenticated = auth !== null && auth.uid !== undefined;
@@ -656,6 +690,88 @@ test('Band Member / Valid Code: Reading band and members must be ALLOWED', () =>
     resourceData: engine.get('bands/band_secret/members/user_host_123').data,
   });
   if (!memberReadRoster) throw new Error('Member was blocked from reading own band roster');
+});
+
+test('Band Code: Overwriting or hijacking existing bandCodes must be REJECTED (immutable)', () => {
+  const engine = new RuleEngine({
+    'bandCodes/BND123': { data: { bandId: 'band_legit', code: 'BND123' } },
+    'bands/band_legit': { data: { id: 'band_legit', leaderId: hostUser.uid } },
+  });
+
+  // Attacker tries to update existing band code to point to attacker's band
+  const hijackAttempt = engine.evalBandCodes({
+    op: 'update',
+    code: 'BND123',
+    auth: attackerUser,
+    resourceData: engine.get('bandCodes/BND123').data,
+    requestData: { bandId: 'band_attacker' },
+  });
+  if (hijackAttempt !== false) {
+    throw new Error('Attacker was able to overwrite/hijack an existing band code');
+  }
+
+  // Even the band leader cannot update a code once generated (codes are immutable)
+  const leaderUpdateAttempt = engine.evalBandCodes({
+    op: 'update',
+    code: 'BND123',
+    auth: hostUser,
+    resourceData: engine.get('bandCodes/BND123').data,
+    requestData: { bandId: 'band_legit_new' },
+  });
+  if (leaderUpdateAttempt !== false) {
+    throw new Error('Band code was allowed to be mutated (must be strictly immutable)');
+  }
+});
+
+test('Band Code: Creating valid 6-char bandCode must be ALLOWED', () => {
+  const engine = new RuleEngine();
+  const createAllowed = engine.evalBandCodes({
+    op: 'create',
+    code: 'NEW123',
+    auth: hostUser,
+    requestData: { bandId: 'band_legit' },
+  });
+  if (!createAllowed) {
+    throw new Error('Legitimate band leader was rejected from creating a valid band code');
+  }
+
+  // Invalid length must be rejected
+  const invalidLength = engine.evalBandCodes({
+    op: 'create',
+    code: 'SHORT',
+    auth: hostUser,
+    requestData: { bandId: 'band_legit' },
+  });
+  if (invalidLength !== false) {
+    throw new Error('Malformed band code length was allowed');
+  }
+});
+
+test('Band Code: Non-leader deleting bandCode must be REJECTED', () => {
+  const engine = new RuleEngine({
+    'bandCodes/BND123': { data: { bandId: 'band_legit', code: 'BND123' } },
+    'bands/band_legit': { data: { id: 'band_legit', leaderId: hostUser.uid } },
+  });
+
+  const deleteAttacker = engine.evalBandCodes({
+    op: 'delete',
+    code: 'BND123',
+    auth: attackerUser,
+    resourceData: engine.get('bandCodes/BND123').data,
+  });
+  if (deleteAttacker !== false) {
+    throw new Error('Attacker was allowed to delete legitimate band code');
+  }
+
+  const deleteLeader = engine.evalBandCodes({
+    op: 'delete',
+    code: 'BND123',
+    auth: hostUser,
+    resourceData: engine.get('bandCodes/BND123').data,
+  });
+  if (!deleteLeader) {
+    throw new Error('Band leader was rejected from deleting their own band code');
+  }
 });
 
 // Run all tests

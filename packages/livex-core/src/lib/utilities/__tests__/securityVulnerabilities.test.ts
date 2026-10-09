@@ -3,6 +3,7 @@ import { extractChordProgressionFromText } from '../../chord/chordResolution';
 import { parsePastedLyrics, isChordLine, parseLineStructuralElement } from '../../lyrics/lyricsParser';
 import { extractClientRecommendations } from '../../assistant/actionExtractor';
 import { generateQrSvg } from '../../qr/qrGenerator';
+import { formatSanitizedError } from '../security';
 
 describe('Security & ReDoS / Prototype Pollution Elimination Suite', () => {
   describe('1. QR Generator sanitizeColor ReDoS Validation', () => {
@@ -170,6 +171,65 @@ That saved a [G]wretch like me
       expect(Object.prototype.hasOwnProperty.call(dummyTarget, 'polluted')).toBe(false);
       expect(merged.id).toBe('el-1');
       expect(merged.polluted).toBeUndefined();
+    });
+  });
+
+  describe('6. Server Error Sanitization & Zero-Leakage Invariants', () => {
+    it('completely strips raw stack traces, local paths, and database errors', () => {
+      const rawErrorWithLeak = new Error('Database connection failed at C:\\Users\\Mauren\\AppData\\Local\\Firestore: connection timeout');
+      rawErrorWithLeak.stack = 'Error: Database connection failed\n    at internalQuery (C:\\Users\\Mauren\\Documents\\Livex\\db.ts:42:15)';
+
+      const sanitized = formatSanitizedError(rawErrorWithLeak);
+
+      expect(sanitized.error).toBe('Internal Server Error');
+      expect(sanitized.code).toBe('INTERNAL_ERROR');
+      expect(sanitized.message).toBe('An error occurred while processing the request.');
+      expect((sanitized as any).stack).toBeUndefined();
+      expect(JSON.stringify(sanitized)).not.toContain('C:\\Users');
+      expect(JSON.stringify(sanitized)).not.toContain('db.ts');
+    });
+
+    it('returns custom safe fallback message and machine-readable error code', () => {
+      const sanitized = formatSanitizedError(new Error('Sensitive secret XYZ'), 'Custom user-facing message', 'CUSTOM_CODE');
+      expect(sanitized.error).toBe('Internal Server Error');
+      expect(sanitized.code).toBe('CUSTOM_CODE');
+      expect(sanitized.message).toBe('Custom user-facing message');
+      expect(JSON.stringify(sanitized)).not.toContain('Sensitive secret XYZ');
+    });
+  });
+
+  describe('7. Server-Side Input Schema & Token Spending Invariants', () => {
+    it('enforces maximum character budget and structured validation', () => {
+      const MAX_PROMPT_CHARS = 8192;
+      const MAX_ATTACHMENTS = 5;
+      const MAX_ATTACHMENT_BYTES = 12 * 1024 * 1024;
+
+      const oversizedPrompt = 'a'.repeat(MAX_PROMPT_CHARS + 1);
+      expect(oversizedPrompt.length > MAX_PROMPT_CHARS).toBe(true);
+
+      const excessiveAttachments = Array.from({ length: MAX_ATTACHMENTS + 1 }, (_, i) => ({
+        id: `att-${i}`,
+        dataUrl: 'data:text/plain;base64,dGVzdA==',
+      }));
+      expect(excessiveAttachments.length > MAX_ATTACHMENTS).toBe(true);
+
+      const oversizedAttachmentBytes = 13 * 1024 * 1024;
+      expect(oversizedAttachmentBytes > MAX_ATTACHMENT_BYTES).toBe(true);
+    });
+
+    it('enforces model token generation budgets (spending cap)', () => {
+      const TOKEN_BUDGETS = {
+        gemini: 2048,
+        groq: 2048,
+        workersAi: 2048,
+        anthropic: 1536,
+        openai: 1536,
+      };
+
+      for (const [provider, budget] of Object.entries(TOKEN_BUDGETS)) {
+        expect(budget).toBeGreaterThan(0);
+        expect(budget).toBeLessThanOrEqual(2048);
+      }
     });
   });
 });

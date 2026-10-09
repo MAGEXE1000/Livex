@@ -169,10 +169,11 @@ service cloud.firestore {
     match /bandCodes/{code} {
       allow list: if false;
       allow get: if isAuthenticated() && code.size() == 6;
-      allow create, update: if isAuthenticated()
+      allow create: if isAuthenticated()
         && code.size() == 6
         && request.resource.data.bandId is string
         && request.resource.data.bandId.size() > 0;
+      allow update: if false;
       allow delete: if isAuthenticated() && (
         !exists(/databases/$(database)/documents/bands/$(resource.data.bandId)) ||
         get(/databases/$(database)/documents/bands/$(resource.data.bandId)).data.leaderId == request.auth.uid

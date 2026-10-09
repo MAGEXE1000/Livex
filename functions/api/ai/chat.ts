@@ -906,6 +906,117 @@ class ReasoningStreamParser {
   }
 }
 
+interface ValidationResult {
+  valid: boolean;
+  message?: string;
+}
+
+/**
+ * Validates request payload against strict schema.
+ * Rejects malformed structures, unexpected types, and oversized fields.
+ */
+function validateChatRequest(body: any): ValidationResult {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
+    return { valid: false, message: 'Request body must be a valid JSON object' };
+  }
+
+  // 1. Prompt validation
+  if (typeof body.prompt !== 'string' || !body.prompt.trim()) {
+    return { valid: false, message: 'Prompt is required and must be a non-empty string' };
+  }
+  if (body.prompt.length > 8192) {
+    return { valid: false, message: 'Prompt exceeds maximum allowed length of 8192 characters' };
+  }
+
+  // 2. History validation
+  if (body.history !== undefined) {
+    if (!Array.isArray(body.history)) {
+      return { valid: false, message: 'History must be an array' };
+    }
+    if (body.history.length > 50) {
+      return { valid: false, message: 'History cannot exceed 50 items' };
+    }
+    for (let i = 0; i < body.history.length; i++) {
+      const item = body.history[i];
+      if (!item || typeof item !== 'object' || Array.isArray(item)) {
+        return { valid: false, message: `History item at index ${i} must be an object` };
+      }
+      if (typeof item.role !== 'string' || !['user', 'assistant', 'system', 'model'].includes(item.role)) {
+        return { valid: false, message: `History item at index ${i} has invalid role (allowed: user, assistant, system, model)` };
+      }
+      if (typeof item.content !== 'string') {
+        return { valid: false, message: `History item at index ${i} content must be a string` };
+      }
+      if (item.content.length > 8192) {
+        return { valid: false, message: `History item at index ${i} content exceeds maximum length of 8192 characters` };
+      }
+    }
+  }
+
+  // 3. Attachments validation
+  if (body.attachments !== undefined) {
+    if (!Array.isArray(body.attachments)) {
+      return { valid: false, message: 'Attachments must be an array' };
+    }
+    if (body.attachments.length > 5) {
+      return { valid: false, message: 'Maximum 5 attachments allowed per request' };
+    }
+    let totalAttachmentBytes = 0;
+    for (let i = 0; i < body.attachments.length; i++) {
+      const att = body.attachments[i];
+      if (!att || typeof att !== 'object' || Array.isArray(att)) {
+        return { valid: false, message: `Attachment at index ${i} must be an object` };
+      }
+      if (typeof att.dataUrl !== 'string' || !att.dataUrl) {
+        return { valid: false, message: `Attachment at index ${i} must contain a valid dataUrl string` };
+      }
+      totalAttachmentBytes += att.dataUrl.length;
+      if (att.type !== undefined && (typeof att.type !== 'string' || att.type.length > 100)) {
+        return { valid: false, message: `Attachment at index ${i} has invalid MIME type` };
+      }
+      if (att.name !== undefined && (typeof att.name !== 'string' || att.name.length > 255)) {
+        return { valid: false, message: `Attachment at index ${i} has invalid name` };
+      }
+    }
+    if (totalAttachmentBytes > 12 * 1024 * 1024) {
+      return { valid: false, message: 'Total attachment size exceeds maximum allowed limit (10MB)' };
+    }
+  }
+
+  // 4. Context validation
+  if (body.context !== undefined) {
+    if (typeof body.context !== 'object' || body.context === null || Array.isArray(body.context)) {
+      return { valid: false, message: 'Context must be a valid JSON object' };
+    }
+    try {
+      if (JSON.stringify(body.context).length > 65536) {
+        return { valid: false, message: 'Context exceeds maximum size of 64KB' };
+      }
+    } catch {
+      return { valid: false, message: 'Context contains non-serializable data' };
+    }
+  }
+
+  // 5. Optional string parameters validation
+  if (body.model !== undefined && (typeof body.model !== 'string' || body.model.length > 128)) {
+    return { valid: false, message: 'Model identifier must be a string under 128 characters' };
+  }
+  if (body.provider !== undefined && (typeof body.provider !== 'string' || body.provider.length > 64)) {
+    return { valid: false, message: 'Provider identifier must be a string under 64 characters' };
+  }
+  if (body.language !== undefined && (typeof body.language !== 'string' || body.language.length > 32)) {
+    return { valid: false, message: 'Language preference must be a string under 32 characters' };
+  }
+  if (body.baseUrl !== undefined && (typeof body.baseUrl !== 'string' || body.baseUrl.length > 512)) {
+    return { valid: false, message: 'Base URL must be a string under 512 characters' };
+  }
+  if (body.apiKey !== undefined && (typeof body.apiKey !== 'string' || body.apiKey.length > 512)) {
+    return { valid: false, message: 'API key must be a string under 512 characters' };
+  }
+
+  return { valid: true };
+}
+
 export const onRequestPost = async (context: { request: Request; env: Env }) => {
   const { request, env } = context;
 
@@ -926,7 +1037,11 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
       body = await request.json();
     } catch {
       return new Response(
-        JSON.stringify({ error: 'Bad Request', message: 'Invalid JSON payload' }),
+        JSON.stringify({
+          error: 'Bad Request',
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid JSON payload',
+        }),
         {
           status: 400,
           headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
@@ -934,29 +1049,14 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
       );
     }
 
-    const prompt = typeof body?.prompt === 'string' ? body.prompt.trim() : '';
-    if (!prompt) {
+    const validation = validateChatRequest(body);
+    if (!validation.valid) {
       return new Response(
-        JSON.stringify({ error: 'Bad Request', message: 'Prompt is required and must be a non-empty string' }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-        }
-      );
-    }
-    if (prompt.length > 8192) {
-      return new Response(
-        JSON.stringify({ error: 'Bad Request', message: 'Prompt exceeds maximum allowed length of 8192 characters' }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-        }
-      );
-    }
-
-    if (body.history !== undefined && !Array.isArray(body.history)) {
-      return new Response(
-        JSON.stringify({ error: 'Bad Request', message: 'History must be an array' }),
+        JSON.stringify({
+          error: 'Bad Request',
+          code: 'VALIDATION_ERROR',
+          message: validation.message || 'Validation failed',
+        }),
         {
           status: 400,
           headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
@@ -964,41 +1064,8 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
       );
     }
 
+    const prompt = (body.prompt as string).trim();
     const attachments = Array.isArray(body?.attachments) ? body.attachments : [];
-    if (body.attachments !== undefined && !Array.isArray(body.attachments)) {
-      return new Response(
-        JSON.stringify({ error: 'Bad Request', message: 'Attachments must be an array' }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-        }
-      );
-    }
-    if (attachments.length > 5) {
-      return new Response(
-        JSON.stringify({ error: 'Bad Request', message: 'Maximum 5 attachments allowed per request' }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-        }
-      );
-    }
-
-    let totalAttachmentBytes = 0;
-    for (const att of attachments) {
-      if (typeof att?.dataUrl === 'string') {
-        totalAttachmentBytes += att.dataUrl.length;
-      }
-    }
-    if (totalAttachmentBytes > 12 * 1024 * 1024) {
-      return new Response(
-        JSON.stringify({ error: 'Bad Request', message: 'Total attachment size exceeds maximum allowed limit (10MB)' }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-        }
-      );
-    }
 
     // 3. Authentication & Key Routing (Zero-BYOK vs BYOK)
     const directApiKey =
@@ -1015,6 +1082,7 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
       return new Response(
         JSON.stringify({
           error: 'Unauthorized',
+          code: 'UNAUTHORIZED',
           message: 'Authentication required. Please sign in or provide a valid API key.',
         }),
         {
@@ -1031,7 +1099,11 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
     const clientIp = request.headers.get('cf-connecting-ip') || 'unknown-client';
     if (!checkRateLimit(clientIp, 60, 3600000, ipRateLimits)) {
       return new Response(
-        JSON.stringify({ error: 'Too Many Requests', message: 'Rate limit exceeded. Please wait a few minutes before asking more questions.' }),
+        JSON.stringify({
+          error: 'Too Many Requests',
+          code: 'RATE_LIMIT_EXCEEDED',
+          message: 'Rate limit exceeded. Please wait a few minutes before asking more questions.',
+        }),
         {
           status: 429,
           headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*', 'Retry-After': '60' },
@@ -1041,7 +1113,11 @@ export const onRequestPost = async (context: { request: Request; env: Env }) => 
 
     if (authUser && !checkRateLimit(authUser.uid, 80, 3600000, userRateLimits)) {
       return new Response(
-        JSON.stringify({ error: 'Too Many Requests', message: 'Account rate limit reached. Please wait a moment before sending more queries.' }),
+        JSON.stringify({
+          error: 'Too Many Requests',
+          code: 'RATE_LIMIT_EXCEEDED',
+          message: 'Account rate limit reached. Please wait a moment before sending more queries.',
+        }),
         {
           status: 429,
           headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*', 'Retry-After': '60' },
@@ -1877,6 +1953,7 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
   return new Response(
     JSON.stringify({
       error: 'Service Unavailable',
+      code: 'SERVICE_UNAVAILABLE',
       message:
         'Livex AI cloud service is temporarily reaching capacity or connecting to edge inference. Please retry in a moment.',
     }),
@@ -1893,6 +1970,7 @@ User UI Language Preference: "${userLanguage}". Always reply in the language in 
     return new Response(
       JSON.stringify({
         error: 'Internal Server Error',
+        code: 'INTERNAL_ERROR',
         message: 'An error occurred while processing the request.',
       }),
       {
