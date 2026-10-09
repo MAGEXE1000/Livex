@@ -104,7 +104,7 @@ function RealAppLayoutWrapper({
           {/* Footer */}
           <div className="px-1 space-y-0.5 border-t border-zinc-900 pt-2 text-[6.5px] text-zinc-600 font-bold">
             <div className="truncate text-zinc-500 font-medium">Guest User</div>
-            <div>Web v4.0.0</div>
+            <div>Livex Production</div>
           </div>
         </div>
 

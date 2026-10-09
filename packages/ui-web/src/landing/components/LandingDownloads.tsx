@@ -111,8 +111,8 @@ export default function LandingDownloads({
 
                 <div className="space-y-2.5 mb-8 text-xs text-zinc-400 font-normal">
                   <div className="flex justify-between border-b border-white/5 pb-2">
-                    <span>Web Version</span>
-                    <span className="font-mono text-zinc-200">v4.0.0</span>
+                    <span>Distribution</span>
+                    <span className="text-zinc-200">Production Web Track</span>
                   </div>
                   <div className="flex justify-between border-b border-white/5 pb-2">
                     <span>Target Hardware</span>

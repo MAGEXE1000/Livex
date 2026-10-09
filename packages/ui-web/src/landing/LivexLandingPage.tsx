@@ -156,7 +156,7 @@ export default function LivexLandingPage({ navigateTo }: LivexLandingPageProps) 
         initial={showIntro ? { opacity: 0 } : { opacity: 1 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        className="min-h-screen font-sans selection:bg-white/20 selection:text-white overflow-x-hidden bg-black text-white"
+        className="min-h-screen font-sans selection:bg-zinc-200 selection:text-zinc-900 dark:selection:bg-white/20 dark:selection:text-white overflow-x-hidden bg-zinc-50 text-zinc-900 dark:bg-black dark:text-white transition-colors duration-200"
       >
         {/* 1. Floating Resizable Navbar (Aceternity UI style) */}
         <ResizableNavbar navigateTo={navigateTo} />
