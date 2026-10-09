@@ -240,8 +240,8 @@ importers:
         specifier: 8.4.3
         version: 8.4.3(@capacitor/core@8.4.3)
       '@capacitor/app':
-        specifier: ^8.1.0
-        version: 8.1.0(@capacitor/core@8.4.3)
+        specifier: ^8.1.2
+        version: 8.1.2(@capacitor/core@8.4.3)
       '@capacitor/core':
         specifier: 8.4.3
         version: 8.4.3
@@ -464,8 +464,8 @@ importers:
         specifier: 8.4.3
         version: 8.4.3(@capacitor/core@8.4.3)
       '@capacitor/app':
-        specifier: ^8.1.0
-        version: 8.1.0(@capacitor/core@8.4.3)
+        specifier: ^8.1.2
+        version: 8.1.2(@capacitor/core@8.4.3)
       '@capacitor/core':
         specifier: 8.4.3
         version: 8.4.3
@@ -567,8 +567,8 @@ importers:
         specifier: 8.4.3
         version: 8.4.3(@capacitor/core@8.4.3)
       '@capacitor/app':
-        specifier: ^8.1.0
-        version: 8.1.0(@capacitor/core@8.4.3)
+        specifier: ^8.1.2
+        version: 8.1.2(@capacitor/core@8.4.3)
       '@capacitor/core':
         specifier: 8.4.3
         version: 8.4.3
@@ -676,8 +676,8 @@ importers:
         specifier: 8.4.3
         version: 8.4.3(@capacitor/core@8.4.3)
       '@capacitor/app':
-        specifier: ^8.1.0
-        version: 8.1.0(@capacitor/core@8.4.3)
+        specifier: ^8.1.2
+        version: 8.1.2(@capacitor/core@8.4.3)
       '@capacitor/core':
         specifier: 8.4.3
         version: 8.4.3
@@ -803,8 +803,8 @@ importers:
         specifier: 8.4.3
         version: 8.4.3(@capacitor/core@8.4.3)
       '@capacitor/app':
-        specifier: ^8.1.0
-        version: 8.1.0(@capacitor/core@8.4.3)
+        specifier: ^8.1.2
+        version: 8.1.2(@capacitor/core@8.4.3)
       '@capacitor/core':
         specifier: 8.4.3
         version: 8.4.3
@@ -1052,8 +1052,8 @@ packages:
     peerDependencies:
       '@capacitor/core': 8.4.3
 
-  '@capacitor/app@8.1.0':
-    resolution: {integrity: sha512-MlmttTOWHDedr/G4SrhNRxsXMqY+R75S4MM4eIgzsgCzOYhb/MpCkA5Q3nuOCfL1oHm26xjUzqZ5aupbOwdfYg==}
+  '@capacitor/app@8.1.2':
+    resolution: {integrity: sha512-uKBlsrXH0IdvUn69e/KKYbZ32A06pcrUdG8LWuZ/6y33YMXZXLEEdNSwl+jKS/SrsTWqnePs8EqSWaiQM3mUGA==}
     peerDependencies:
       '@capacitor/core': 8.4.3
 
@@ -5591,7 +5591,7 @@ snapshots:
     dependencies:
       '@capacitor/core': 8.4.3
 
-  '@capacitor/app@8.1.0(@capacitor/core@8.4.3)':
+  '@capacitor/app@8.1.2(@capacitor/core@8.4.3)':
     dependencies:
       '@capacitor/core': 8.4.3
 
