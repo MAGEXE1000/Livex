@@ -158,8 +158,12 @@ function parseArgs() {
       customFilename = args[++i];
     } else if (arg === '--app' && args[i + 1]) {
       targetApp = args[++i];
-    } else if (arg === '--page' && args[i + 1]) {
-      targetPage = args[++i];
+    } else if (arg === '--page') {
+      if (args[i + 1] && !args[i + 1].startsWith('-')) {
+        targetPage = args[++i];
+      } else {
+        targetPage = '';
+      }
     } else if (!arg.startsWith('-') && !customFilename) {
       customFilename = arg;
     }
@@ -207,6 +211,15 @@ async function run() {
       deviceScaleFactor: 2,
       isMobile: !isDesktop,
       hasTouch: !isDesktop,
+    });
+
+    await page.evaluateOnNewDocument(() => {
+      try {
+        sessionStorage.setItem('livex:landingIntroSeen', 'true');
+        sessionStorage.setItem('studio:landingIntroSeen', 'true');
+        sessionStorage.setItem('livex-intro-shown', 'true');
+        sessionStorage.setItem('studio-intro-shown', 'true');
+      } catch (_) {}
     });
 
     const initialPath = targetApp === 'web' && targetPage ? `/${targetPage.replace(/^\//, '')}` : '/';

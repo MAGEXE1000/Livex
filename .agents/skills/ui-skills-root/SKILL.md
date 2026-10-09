@@ -63,6 +63,7 @@ Use this router before beginning UI, UX, animation, layout, or mobile adaptation
 - `design-review`: Pre-ship visual and interaction design audit.
 - `interface-review`: Structured interface evaluation.
 - `improve-ui`: Audit against product design evidence.
+- `audit`: Technical UI quality checks across accessibility, performance, theming, responsive behavior, and anti-patterns.
 - `review-animations`: Critiquing existing motion implementation.
 - `improve-animations`: Roadmap of motion improvements.
 
@@ -83,6 +84,8 @@ Use this router before beginning UI, UX, animation, layout, or mobile adaptation
 - `react-doctor`: Quick health checks for React components.
 - `codebase-design`: Modular organization, interfaces, boundary design.
 - `improve-codebase-architecture`: Decoupling and refactoring codebase architecture.
+- `improve`: Codebase survey as senior advisor producing prioritized, self-contained implementation plans.
+- `thermo-nuclear-code-quality-review`: Strict maintainability review for abstraction quality, giant files, and spaghetti growth.
 - `unlazy`: Rigorous verification before declaring tasks complete.
 - `best-practices`: Core frontend engineering principles.
 - `optimize`: Performance bottleneck elimination.
