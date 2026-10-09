@@ -3,6 +3,20 @@ import { CANONICAL_CONTENT_TRANSITION } from '@workspace/livex-core';
 import { useAppReducedMotion } from '../hooks/useAppReducedMotion';
 import { InspectorOverlayRenderer } from '../features/devtools/inspector';
 
+const transition = CANONICAL_CONTENT_TRANSITION ?? {
+  ENTER_DURATION_MS: 200,
+  EXIT_DURATION_MS: 150,
+  ENTER_EASING: 'cubic-bezier(0.16, 1, 0.3, 1)',
+  EXIT_EASING: 'cubic-bezier(0.22, 1, 0.36, 1)',
+  HORIZONTAL_OFFSET_PX: 14,
+  HORIZONTAL_EXIT_OFFSET_PX: 10,
+  VERTICAL_OFFSET_PX: 8,
+  VERTICAL_EXIT_OFFSET_PX: 6,
+  SCALE_INCOMING: 0.992,
+  SCALE_OUTGOING: 0.995,
+  REDUCED_DURATION_MS: 0,
+};
+
 export interface SharedNavigationContainerProps {
   activeView: string;
   direction?: 'right' | 'left';
@@ -105,7 +119,7 @@ export function SharedNavigationContainer({
         }
         return prev;
       });
-    }, CANONICAL_CONTENT_TRANSITION.EXIT_DURATION_MS);
+    }, transition.EXIT_DURATION_MS);
 
     const settleTimer = setTimeout(() => {
       setTransitionState((prev) => {
@@ -114,7 +128,7 @@ export function SharedNavigationContainer({
         }
         return prev;
       });
-    }, CANONICAL_CONTENT_TRANSITION.ENTER_DURATION_MS);
+    }, transition.ENTER_DURATION_MS);
 
     return () => {
       clearTimeout(exitTimer);
@@ -138,7 +152,7 @@ export function SharedNavigationContainer({
         @keyframes livex-content-enter-forward {
           0% {
             opacity: 0;
-            transform: translate3d(${CANONICAL_CONTENT_TRANSITION.HORIZONTAL_OFFSET_PX}px, 0, 0) scale(${CANONICAL_CONTENT_TRANSITION.SCALE_INCOMING});
+            transform: translate3d(${transition.HORIZONTAL_OFFSET_PX}px, 0, 0) scale(${transition.SCALE_INCOMING});
           }
           100% {
             opacity: 1;
@@ -152,13 +166,13 @@ export function SharedNavigationContainer({
           }
           100% {
             opacity: 0;
-            transform: translate3d(-${CANONICAL_CONTENT_TRANSITION.HORIZONTAL_EXIT_OFFSET_PX}px, 0, 0) scale(${CANONICAL_CONTENT_TRANSITION.SCALE_OUTGOING});
+            transform: translate3d(-${transition.HORIZONTAL_EXIT_OFFSET_PX}px, 0, 0) scale(${transition.SCALE_OUTGOING});
           }
         }
         @keyframes livex-content-enter-backward {
           0% {
             opacity: 0;
-            transform: translate3d(-${CANONICAL_CONTENT_TRANSITION.HORIZONTAL_OFFSET_PX}px, 0, 0) scale(${CANONICAL_CONTENT_TRANSITION.SCALE_INCOMING});
+            transform: translate3d(-${transition.HORIZONTAL_OFFSET_PX}px, 0, 0) scale(${transition.SCALE_INCOMING});
           }
           100% {
             opacity: 1;
@@ -172,13 +186,13 @@ export function SharedNavigationContainer({
           }
           100% {
             opacity: 0;
-            transform: translate3d(${CANONICAL_CONTENT_TRANSITION.HORIZONTAL_EXIT_OFFSET_PX}px, 0, 0) scale(${CANONICAL_CONTENT_TRANSITION.SCALE_OUTGOING});
+            transform: translate3d(${transition.HORIZONTAL_EXIT_OFFSET_PX}px, 0, 0) scale(${transition.SCALE_OUTGOING});
           }
         }
         @keyframes livex-content-enter-elevation {
           0% {
             opacity: 0;
-            transform: translate3d(0, ${CANONICAL_CONTENT_TRANSITION.VERTICAL_OFFSET_PX}px, 0) scale(${CANONICAL_CONTENT_TRANSITION.SCALE_INCOMING});
+            transform: translate3d(0, ${transition.VERTICAL_OFFSET_PX}px, 0) scale(${transition.SCALE_INCOMING});
           }
           100% {
             opacity: 1;
@@ -192,13 +206,13 @@ export function SharedNavigationContainer({
           }
           100% {
             opacity: 0;
-            transform: translate3d(0, -${CANONICAL_CONTENT_TRANSITION.VERTICAL_EXIT_OFFSET_PX}px, 0) scale(${CANONICAL_CONTENT_TRANSITION.SCALE_OUTGOING});
+            transform: translate3d(0, -${transition.VERTICAL_EXIT_OFFSET_PX}px, 0) scale(${transition.SCALE_OUTGOING});
           }
         }
         @keyframes livex-content-enter-elevation-reverse {
           0% {
             opacity: 0;
-            transform: translate3d(0, -${CANONICAL_CONTENT_TRANSITION.VERTICAL_EXIT_OFFSET_PX}px, 0) scale(${CANONICAL_CONTENT_TRANSITION.SCALE_OUTGOING});
+            transform: translate3d(0, -${transition.VERTICAL_EXIT_OFFSET_PX}px, 0) scale(${transition.SCALE_OUTGOING});
           }
           100% {
             opacity: 1;
@@ -212,33 +226,33 @@ export function SharedNavigationContainer({
           }
           100% {
             opacity: 0;
-            transform: translate3d(0, ${CANONICAL_CONTENT_TRANSITION.VERTICAL_OFFSET_PX}px, 0) scale(${CANONICAL_CONTENT_TRANSITION.SCALE_INCOMING});
+            transform: translate3d(0, ${transition.VERTICAL_OFFSET_PX}px, 0) scale(${transition.SCALE_INCOMING});
           }
         }
 
         .livex-content-enter-forward {
-          animation: livex-content-enter-forward ${CANONICAL_CONTENT_TRANSITION.ENTER_DURATION_MS}ms ${CANONICAL_CONTENT_TRANSITION.ENTER_EASING} both;
+          animation: livex-content-enter-forward ${transition.ENTER_DURATION_MS}ms ${transition.ENTER_EASING} both;
         }
         .livex-content-exit-forward {
-          animation: livex-content-exit-forward ${CANONICAL_CONTENT_TRANSITION.EXIT_DURATION_MS}ms ${CANONICAL_CONTENT_TRANSITION.EXIT_EASING} both;
+          animation: livex-content-exit-forward ${transition.EXIT_DURATION_MS}ms ${transition.EXIT_EASING} both;
         }
         .livex-content-enter-backward {
-          animation: livex-content-enter-backward ${CANONICAL_CONTENT_TRANSITION.ENTER_DURATION_MS}ms ${CANONICAL_CONTENT_TRANSITION.ENTER_EASING} both;
+          animation: livex-content-enter-backward ${transition.ENTER_DURATION_MS}ms ${transition.ENTER_EASING} both;
         }
         .livex-content-exit-backward {
-          animation: livex-content-exit-backward ${CANONICAL_CONTENT_TRANSITION.EXIT_DURATION_MS}ms ${CANONICAL_CONTENT_TRANSITION.EXIT_EASING} both;
+          animation: livex-content-exit-backward ${transition.EXIT_DURATION_MS}ms ${transition.EXIT_EASING} both;
         }
         .livex-content-enter-elevation {
-          animation: livex-content-enter-elevation ${CANONICAL_CONTENT_TRANSITION.ENTER_DURATION_MS}ms ${CANONICAL_CONTENT_TRANSITION.ENTER_EASING} both;
+          animation: livex-content-enter-elevation ${transition.ENTER_DURATION_MS}ms ${transition.ENTER_EASING} both;
         }
         .livex-content-exit-elevation {
-          animation: livex-content-exit-elevation ${CANONICAL_CONTENT_TRANSITION.EXIT_DURATION_MS}ms ${CANONICAL_CONTENT_TRANSITION.EXIT_EASING} both;
+          animation: livex-content-exit-elevation ${transition.EXIT_DURATION_MS}ms ${transition.EXIT_EASING} both;
         }
         .livex-content-enter-elevation-reverse {
-          animation: livex-content-enter-elevation-reverse ${CANONICAL_CONTENT_TRANSITION.ENTER_DURATION_MS}ms ${CANONICAL_CONTENT_TRANSITION.ENTER_EASING} both;
+          animation: livex-content-enter-elevation-reverse ${transition.ENTER_DURATION_MS}ms ${transition.ENTER_EASING} both;
         }
         .livex-content-exit-elevation-reverse {
-          animation: livex-content-exit-elevation-reverse ${CANONICAL_CONTENT_TRANSITION.EXIT_DURATION_MS}ms ${CANONICAL_CONTENT_TRANSITION.EXIT_EASING} both;
+          animation: livex-content-exit-elevation-reverse ${transition.EXIT_DURATION_MS}ms ${transition.EXIT_EASING} both;
         }
 
         @media (prefers-reduced-motion: reduce) {

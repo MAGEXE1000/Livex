@@ -3,27 +3,41 @@ import { motion, AnimatePresence } from 'motion/react';
 import { CANONICAL_CONTENT_TRANSITION } from '@workspace/livex-core';
 import { useAppReducedMotion } from '../hooks/useAppReducedMotion';
 
+const transition = CANONICAL_CONTENT_TRANSITION ?? {
+  ENTER_DURATION_MS: 200,
+  EXIT_DURATION_MS: 150,
+  ENTER_EASING: 'cubic-bezier(0.16, 1, 0.3, 1)',
+  EXIT_EASING: 'cubic-bezier(0.22, 1, 0.36, 1)',
+  HORIZONTAL_OFFSET_PX: 14,
+  HORIZONTAL_EXIT_OFFSET_PX: 10,
+  VERTICAL_OFFSET_PX: 8,
+  VERTICAL_EXIT_OFFSET_PX: 6,
+  SCALE_INCOMING: 0.992,
+  SCALE_OUTGOING: 0.995,
+  REDUCED_DURATION_MS: 0,
+};
+
 export const UNIFIED_NAV_TRANSITION = {
   initial: {
     opacity: 0,
-    y: CANONICAL_CONTENT_TRANSITION.VERTICAL_OFFSET_PX,
-    scale: CANONICAL_CONTENT_TRANSITION.SCALE_INCOMING,
+    y: transition.VERTICAL_OFFSET_PX,
+    scale: transition.SCALE_INCOMING,
   },
   animate: {
     opacity: 1,
     y: 0,
     scale: 1,
     transition: {
-      duration: CANONICAL_CONTENT_TRANSITION.ENTER_DURATION_MS / 1000,
+      duration: transition.ENTER_DURATION_MS / 1000,
       ease: [0.16, 1, 0.3, 1] as const,
     },
   },
   exit: {
     opacity: 0,
-    y: -CANONICAL_CONTENT_TRANSITION.VERTICAL_EXIT_OFFSET_PX,
-    scale: CANONICAL_CONTENT_TRANSITION.SCALE_OUTGOING,
+    y: -transition.VERTICAL_EXIT_OFFSET_PX,
+    scale: transition.SCALE_OUTGOING,
     transition: {
-      duration: CANONICAL_CONTENT_TRANSITION.EXIT_DURATION_MS / 1000,
+      duration: transition.EXIT_DURATION_MS / 1000,
       ease: [0.22, 1, 0.36, 1] as const,
     },
   },
@@ -32,21 +46,21 @@ export const UNIFIED_NAV_TRANSITION = {
 export const FADE_THROUGH_TRANSITION = {
   initial: {
     opacity: 0,
-    scale: CANONICAL_CONTENT_TRANSITION.SCALE_INCOMING,
+    scale: transition.SCALE_INCOMING,
   },
   animate: {
     opacity: 1,
     scale: 1,
     transition: {
-      duration: CANONICAL_CONTENT_TRANSITION.ENTER_DURATION_MS / 1000,
+      duration: transition.ENTER_DURATION_MS / 1000,
       ease: [0.16, 1, 0.3, 1] as const,
     },
   },
   exit: {
     opacity: 0,
-    scale: CANONICAL_CONTENT_TRANSITION.SCALE_OUTGOING,
+    scale: transition.SCALE_OUTGOING,
     transition: {
-      duration: CANONICAL_CONTENT_TRANSITION.EXIT_DURATION_MS / 1000,
+      duration: transition.EXIT_DURATION_MS / 1000,
       ease: [0.22, 1, 0.36, 1] as const,
     },
   },
@@ -55,24 +69,24 @@ export const FADE_THROUGH_TRANSITION = {
 export const SLIDE_TRANSITION = {
   initial: {
     opacity: 0,
-    x: CANONICAL_CONTENT_TRANSITION.HORIZONTAL_OFFSET_PX,
-    scale: CANONICAL_CONTENT_TRANSITION.SCALE_INCOMING,
+    x: transition.HORIZONTAL_OFFSET_PX,
+    scale: transition.SCALE_INCOMING,
   },
   animate: {
     opacity: 1,
     x: 0,
     scale: 1,
     transition: {
-      duration: CANONICAL_CONTENT_TRANSITION.ENTER_DURATION_MS / 1000,
+      duration: transition.ENTER_DURATION_MS / 1000,
       ease: [0.16, 1, 0.3, 1] as const,
     },
   },
   exit: {
     opacity: 0,
-    x: -CANONICAL_CONTENT_TRANSITION.HORIZONTAL_EXIT_OFFSET_PX,
-    scale: CANONICAL_CONTENT_TRANSITION.SCALE_OUTGOING,
+    x: -transition.HORIZONTAL_EXIT_OFFSET_PX,
+    scale: transition.SCALE_OUTGOING,
     transition: {
-      duration: CANONICAL_CONTENT_TRANSITION.EXIT_DURATION_MS / 1000,
+      duration: transition.EXIT_DURATION_MS / 1000,
       ease: [0.22, 1, 0.36, 1] as const,
     },
   },
@@ -81,24 +95,24 @@ export const SLIDE_TRANSITION = {
 export const SECTION_DRILLDOWN_TRANSITION = {
   initial: {
     opacity: 0,
-    y: CANONICAL_CONTENT_TRANSITION.VERTICAL_OFFSET_PX,
-    scale: CANONICAL_CONTENT_TRANSITION.SCALE_INCOMING,
+    y: transition.VERTICAL_OFFSET_PX,
+    scale: transition.SCALE_INCOMING,
   },
   animate: {
     opacity: 1,
     y: 0,
     scale: 1,
     transition: {
-      duration: CANONICAL_CONTENT_TRANSITION.ENTER_DURATION_MS / 1000,
+      duration: transition.ENTER_DURATION_MS / 1000,
       ease: [0.16, 1, 0.3, 1] as const,
     },
   },
   exit: {
     opacity: 0,
-    y: -CANONICAL_CONTENT_TRANSITION.VERTICAL_EXIT_OFFSET_PX,
-    scale: CANONICAL_CONTENT_TRANSITION.SCALE_OUTGOING,
+    y: -transition.VERTICAL_EXIT_OFFSET_PX,
+    scale: transition.SCALE_OUTGOING,
     transition: {
-      duration: CANONICAL_CONTENT_TRANSITION.EXIT_DURATION_MS / 1000,
+      duration: transition.EXIT_DURATION_MS / 1000,
       ease: [0.22, 1, 0.36, 1] as const,
     },
   },

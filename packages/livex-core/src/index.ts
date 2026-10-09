@@ -73,6 +73,7 @@ export * from './lib/performance/motionProfiler';
 export * from './lib/performance/livexProfiler';
 
 // Navigation Core Foundation (Sprint 9.1)
+export * from './lib/navigation/navigationMotion';
 export * from './lib/navigation/navigationTypes';
 export * from './lib/navigation/appRegistry';
 export * from './store/useNavigationStore';
@@ -83,7 +84,6 @@ export * from './lib/navigation/GestureDispatcher';
 export * from './lib/navigation/TransitionCoordinator';
 export * from './lib/navigation/validation';
 export * from './lib/navigation/useBackHandler';
-export * from './lib/navigation/navigationMotion';
 
 export * from './lib/nativePlatform';
 export * from './lib/utilities/visualEffects';
