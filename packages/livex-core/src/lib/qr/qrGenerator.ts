@@ -438,8 +438,19 @@ export function generateQrSvg(
     }
   }
 
+  const sanitizeColor = (color: string, fallback: string): string => {
+    const cleaned = String(color).trim();
+    if (/^[#a-zA-Z0-9(),. %-]+$/.test(cleaned) && !/["'<>`\\]/.test(cleaned)) {
+      return cleaned;
+    }
+    return fallback;
+  };
+
+  const safeFgColor = sanitizeColor(fgColor, '#000000');
+  const safeBgColor = sanitizeColor(bgColor, '#ffffff');
+
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" shape-rendering="crispEdges">
-  <rect width="${size}" height="${size}" fill="${bgColor}" rx="12" />
-  <path d="${pathData.trim()}" fill="${fgColor}" />
+  <rect width="${size}" height="${size}" fill="${safeBgColor}" rx="12" />
+  <path d="${pathData.trim()}" fill="${safeFgColor}" />
 </svg>`;
 }

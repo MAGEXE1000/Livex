@@ -66,11 +66,14 @@ public final class SafeContentResolver {
             try {
                 java.io.File file = new java.io.File(path);
                 String canonical = file.getCanonicalPath();
-                if (canonical.startsWith("/data") || canonical.contains("/data/")) {
+                if (canonical.equals("/data") || canonical.startsWith("/data/")
+                        || canonical.startsWith("/data" + java.io.File.separator)
+                        || canonical.contains("/data/")
+                        || canonical.contains(java.io.File.separator + "data" + java.io.File.separator)) {
                     return false;
                 }
             } catch (Exception ignored) {
-                if (path.startsWith("/data") || path.contains("/data/")) {
+                if (path.equals("/data") || path.startsWith("/data/") || path.contains("/data/")) {
                     return false;
                 }
             }
@@ -227,6 +230,19 @@ public final class SafeContentResolver {
         }
         if (!isSafeUri(context, uri)) {
             throw new SecurityException("Unsafe or unauthorized content URI: " + uri);
+        }
+        String path = uri.getPath();
+        if (path != null) {
+            try {
+                java.nio.file.Path normalized =
+                        java.nio.file.FileSystems.getDefault().getPath(path).normalize();
+                if (normalized.startsWith("/data") || normalized.toString().startsWith("/data")) {
+                    throw new SecurityException("Unsafe path in content URI: " + uri);
+                }
+            } catch (SecurityException se) {
+                throw se;
+            } catch (Exception ignored) {
+            }
         }
         InputStream is = context.getContentResolver().openInputStream(uri);
         if (is == null) {

@@ -71,7 +71,8 @@
     "test:release-e2e": "node apps/studio-android/scripts/__tests__/release-e2e.test.mjs",
     "release:parity": "node apps/studio-android/scripts/releaseParity/index.mjs",
     "test:release-parity": "node apps/studio-android/scripts/__tests__/release-parity.test.mjs",
-    "test:groovex-transposition": "node scripts/test-groovex-transposition.mjs"
+    "test:groovex-transposition": "node scripts/test-groovex-transposition.mjs",
+    "security:check": "pnpm audit"
   },
   "private": true,
   "devDependencies": {
@@ -93,7 +94,7 @@
     "playwright": "^1.63.0",
     "prettier": "^3.9.5",
     "puppeteer": "^25.3.0",
-    "sharp": "^0.35.4",
+    "sharp": "^0.35.5",
     "typescript": "~5.7.2",
     "typescript-eslint": "^8.64.0"
   },

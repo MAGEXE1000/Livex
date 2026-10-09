@@ -17,7 +17,7 @@ export function extractClientRecommendations(
   const combinedContext = `${prompt || ''}\n${text}`;
 
   // 1. Detect Explicit livex-action code blocks
-  const actionRegex = /```(?:livex-action|json)?\s*([\s\S]*?)\s*```/g;
+  const actionRegex = /```(?:livex-action|json)?\n?([\s\S]*?)```/g;
   let match: RegExpExecArray | null;
 
   while ((match = actionRegex.exec(text)) !== null) {
@@ -75,18 +75,30 @@ export function extractClientRecommendations(
     /(?:suggested (?:setlist|repertoire|order)|orden sugerid[ao]|reordenar repertorio|repertoire order)/i.test(text) &&
     /(?:1\.\s+([^\n-]+))/i.test(text);
   if (isSetlistReorder) {
-    const songMatches = [
-      ...text.matchAll(
-        /(?:^|\n)\s*(\d+)\.\s+([^\n|–—\-]+?)(?:[–—\-|\s]+([A-G][b#]?(?:m|maj)?[^\n|–—\-]*))?(?:[–—\-|\s]+(\d{2,3}\s*bpm))?/gi
-      ),
-    ];
-    if (songMatches.length >= 2) {
-      const songs = songMatches.map((m, idx) => ({
-        id: `song-${idx + 1}`,
-        title: m[2].trim(),
-        key: m[3]?.trim(),
-        bpm: m[4] ? parseInt(m[4], 10) : undefined,
-      }));
+    const lines = text.split('\n');
+    const songs: { id: string; title: string; key?: string; bpm?: number }[] = [];
+    for (const rawLine of lines) {
+      const line = rawLine.trim();
+      const numMatch = line.match(/^(\d+)\.\s+(.*)$/);
+      if (!numMatch) continue;
+      const rest = numMatch[2].trim();
+      const parts = rest.split(/\s*[-—|–]\s*/);
+      const title = parts[0]?.trim();
+      if (!title) continue;
+      let key: string | undefined;
+      let bpm: number | undefined;
+      for (let i = 1; i < parts.length; i++) {
+        const p = parts[i].trim();
+        const bpmM = p.match(/^(\d{2,3})\s*bpm$/i);
+        if (bpmM) {
+          bpm = parseInt(bpmM[1], 10);
+        } else if (/^[A-G][b#]?(?:m|maj)?/i.test(p)) {
+          key = p;
+        }
+      }
+      songs.push({ id: `song-${songs.length + 1}`, title, key, bpm });
+    }
+    if (songs.length >= 2) {
 
       const actionPayload: AssistantActionPayload = {
         id: `act-${Date.now()}`,
@@ -164,7 +176,7 @@ export function extractClientRecommendations(
     /(?:drum beat|drum groove|patr[oó]n de bater[ií]a|rock beat|energetic rock beat|syncopated snare)/i.test(combinedContext) &&
     /(?:kick|bombo|snare|caja|hi-hat|hihat)/i.test(text);
   if (isDrumPattern) {
-    const tempoMatch = combinedContext.match(/(?:tempo|bpm)\s*:?\s*(\d{2,3})|(\d{2,3})\s*(?:bpm|BPM)/i);
+    const tempoMatch = combinedContext.match(/(?:(?:tempo|bpm)\s*:?\s*(\d{2,3})|(\d{2,3})\s*bpm)/i);
     const bpm = tempoMatch ? parseInt(tempoMatch[1] || tempoMatch[2], 10) : 124;
 
     const actionPayload: AssistantActionPayload = {
@@ -205,7 +217,7 @@ export function extractClientRecommendations(
 
   // 5. Heuristic: Groovex Solo Practice Setup
   const isGroovexSetup =
-    /(?:groovex|practice.*solo|practicar.*solo|stem|stems|mute lead guitar|silenciar guitarra)/i.test(combinedContext) &&
+    /(?:groovex|practice[^.\n]{0,30}solo|practicar[^.\n]{0,30}solo|stems?|mute lead guitar|silenciar guitarra)/i.test(combinedContext) &&
     /(?:mute|solo|volume|volumen|stems?)/i.test(text);
   if (isGroovexSetup) {
     const actionPayload: AssistantActionPayload = {

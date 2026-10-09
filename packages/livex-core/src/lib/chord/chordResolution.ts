@@ -174,7 +174,7 @@ export function extractChordProgressionFromText(
   const combinedContext = `${prompt || ''}\n${text}`;
 
   // 1. Check for explicit JSON or chord-progression block
-  const jsonBlockMatch = text.match(/```(?:chord-progression|json)?\s*([\s\S]*?)\s*```/);
+  const jsonBlockMatch = text.match(/```(?:chord-progression|json)?\n?([\s\S]*?)```/);
   if (jsonBlockMatch) {
     try {
       const parsed = JSON.parse(jsonBlockMatch[1]);
@@ -318,7 +318,7 @@ export function extractChordProgressionFromText(
   );
 
   const romanTokenRegex =
-    /`([b#]?[ivIV]+[a-zA-Z0-9#b()\/+ø°^-]*)`|(?:\b([b#]?[ivIV]+(?:[0-9]|maj|min|m|M|dim|aug|sus|#|b)*(?:\([^)]+\))?)\b)/g;
+    /`([b#]?[ivIV]+[a-zA-Z0-9#b()\/+ø°^-]*)`|(?:\b([b#]?[ivIV]+(?:(?:maj|min|dim|aug|sus)(?:7|9|11|13)?)?[0-9#b()\/+ø°^-]*)\b)/g;
 
   if (analysisLineMatch) {
     const lineRomans = [...analysisLineMatch[1].matchAll(romanTokenRegex)]
@@ -340,7 +340,7 @@ export function extractChordProgressionFromText(
 
   // 6. Extract Tempo / BPM
   let tempo: number | undefined;
-  const tempoMatch = combinedContext.match(/(?:tempo|bpm)\s*:?\s*(\d{2,3})|(\d{2,3})\s*(?:bpm|BPM)/i);
+  const tempoMatch = combinedContext.match(/(?:(?:tempo|bpm)\s*:?\s*(\d{2,3})|(\d{2,3})\s*bpm)/i);
   if (tempoMatch) {
     const val = parseInt(tempoMatch[1] || tempoMatch[2], 10);
     if (val >= 40 && val <= 240) {
@@ -350,7 +350,7 @@ export function extractChordProgressionFromText(
 
   // 7. Extract Time Signature
   let timeSignature: string | undefined;
-  const timeSigMatch = combinedContext.match(/(?:time signature|comp[aá]s)\s*:?\s*([23456789]\/[248])|\b([346]\/4|6\/8|12\/8)\b/i);
+  const timeSigMatch = combinedContext.match(/(?:(?:time signature|comp[aá]s)\s*:?\s*([23456789]\/[248])|\b([346]\/4|6\/8|12\/8)\b)/i);
   if (timeSigMatch) {
     timeSignature = timeSigMatch[1] || timeSigMatch[2];
   }
@@ -381,7 +381,7 @@ export function extractChordProgressionFromText(
 
   // 9. Extract Reference / Inspired By Context
   let referenceContext: string | undefined;
-  const refPromptMatch = combinedContext.match(/(?:analyze(?: the)? harmonic characteristics of|characteristics of|inspired by|in the style of|al estilo de|inspirado en)\s+([^,.\n]+?)(?:and create|and write|without copying|\.|\n|$)/i);
+  const refPromptMatch = combinedContext.match(/(?:analyze(?: the)? harmonic characteristics of|characteristics of|inspired by|in the style of|al estilo de|inspirado en)\s+([^,.\n]{2,60})(?:and create|and write|without copying|$)/i);
   if (refPromptMatch) {
     const refTarget = refPromptMatch[1].replace(/[*_]/g, '').trim();
     if (refTarget && refTarget.length > 2 && refTarget.length < 60) {

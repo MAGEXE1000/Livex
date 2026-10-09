@@ -85,13 +85,16 @@ export function parseVocalRoleFromHeader(headerText: string): {
   vocalRole?: VocalRoleAnnotation;
 } {
   // Check for delimiters like "-", "—", or "|"
-  const separatorMatch = headerText.match(/\s*(?:[-—|–])\s*(.+)$/);
-  if (!separatorMatch) {
+  const sepIndex = headerText.search(/[-—|–]/);
+  if (sepIndex === -1) {
     return { cleanName: headerText.trim() };
   }
 
-  const rolePart = separatorMatch[1].trim();
-  const namePart = headerText.slice(0, separatorMatch.index).trim();
+  const rolePart = headerText.slice(sepIndex + 1).trim();
+  const namePart = headerText.slice(0, sepIndex).trim();
+  if (!rolePart) {
+    return { cleanName: headerText.trim() };
+  }
   const lowerRole = rolePart.toLowerCase();
 
   let standardRole: StandardVocalRole = 'custom';
@@ -147,6 +150,25 @@ export interface StructuralLineParseResult {
 }
 
 /**
+ * Safely parse interlude content without polynomial backtracking ReDoS vulnerabilities
+ */
+export function parseInterludeTokens(raw: string): { label: string; durSec: number } | null {
+  const match = raw.match(
+    /^(Interlude|Solo|Guitar\s+Solo|Piano\s+Solo|Instrumental)(?::\s*([^()]*?))?(?:\s*\((\d{1,4})s?\))?$/i
+  );
+  if (!match) return null;
+  const keyword = match[1].trim();
+  const subLabel = match[2]?.trim();
+  const durStr = match[3];
+  const durSec = durStr ? parseInt(durStr, 10) : 15;
+  const label = subLabel || (keyword.toLowerCase() === 'interlude' ? 'Solo' : keyword);
+  return {
+    label: label.trim() || 'Solo',
+    durSec: isNaN(durSec) ? 15 : durSec,
+  };
+}
+
+/**
  * Detect if a user-entered line is a structural element (section header or timed interlude)
  * so it can be transformed immediately into a visual component rather than remaining raw text.
  */
@@ -156,41 +178,27 @@ export function parseLineStructuralElement(lineText: string): StructuralLinePars
 
   // 1. Interlude patterns:
   // e.g. [Interlude: Solo (15s)], [Solo (20s)], [Interlude (10s)], [Solo], [Interlude], [Guitar Solo]
-  // or Interlude:, Solo:, Guitar Solo:
-  const bracketInterlude = trimmed.match(
-    /^\[(?:Interlude(?::\s*([^(]+?)(?:\s*\((\d+)s?\))?)?|Solo(?:\s*\((\d+)s?\))?|Guitar\s+Solo(?:\s*\((\d+)s?\))?|Piano\s+Solo(?:\s*\((\d+)s?\))?|Instrumental(?:\s*\((\d+)s?\))?)\]$/i
-  );
-  if (bracketInterlude) {
-    const label = (bracketInterlude[1] || 'Solo').trim();
-    const durSec = bracketInterlude[2]
-      ? parseInt(bracketInterlude[2], 10)
-      : bracketInterlude[3]
-      ? parseInt(bracketInterlude[3], 10)
-      : bracketInterlude[4]
-      ? parseInt(bracketInterlude[4], 10)
-      : bracketInterlude[5]
-      ? parseInt(bracketInterlude[5], 10)
-      : bracketInterlude[6]
-      ? parseInt(bracketInterlude[6], 10)
-      : 15;
-    return {
-      kind: 'interlude',
-      interludeLabel: label,
-      interludeDurationSec: isNaN(durSec) ? 15 : durSec,
-    };
+  if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+    const interlude = parseInterludeTokens(trimmed.slice(1, -1).trim());
+    if (interlude) {
+      return {
+        kind: 'interlude',
+        interludeLabel: interlude.label,
+        interludeDurationSec: interlude.durSec,
+      };
+    }
   }
 
-  const colonInterlude = trimmed.match(
-    /^(?:Interlude|Solo|Guitar\s+Solo|Piano\s+Solo|Instrumental):\s*(?:([^(]+?)(?:\s*\((\d+)s?\))?)?$/i
-  );
-  if (colonInterlude) {
-    const label = (colonInterlude[1] || 'Solo').trim();
-    const durSec = colonInterlude[2] ? parseInt(colonInterlude[2], 10) : 15;
-    return {
-      kind: 'interlude',
-      interludeLabel: label,
-      interludeDurationSec: isNaN(durSec) ? 15 : durSec,
-    };
+  // Colon interlude pattern: Interlude:, Solo:, Guitar Solo:
+  if (trimmed.includes(':') && !trimmed.startsWith('[')) {
+    const interlude = parseInterludeTokens(trimmed);
+    if (interlude) {
+      return {
+        kind: 'interlude',
+        interludeLabel: interlude.label,
+        interludeDurationSec: interlude.durSec,
+      };
+    }
   }
 
   // 2. Section Header patterns:
@@ -538,23 +546,19 @@ export function parsePastedLyrics(rawText: string): SongLyricsDocument {
     }
 
     // 2.5 Check for Interlude line: [Interlude: Solo (15s)] or [Interlude] or [Solo (15s)]
-    const interludeMatch = trimmed.match(/^\[(?:Interlude(?::\s*([^(]+?)(?:\s*\((\d+)s?\))?)?|Solo(?:\s*\((\d+)s?\))?)\]$/i);
-    if (interludeMatch) {
-      flushPendingBlankLines();
-      const sec = ensureCurrentSection();
-      const label = interludeMatch[1]?.trim() || 'Solo';
-      const durSec = interludeMatch[2]
-        ? parseInt(interludeMatch[2], 10)
-        : interludeMatch[3]
-        ? parseInt(interludeMatch[3], 10)
-        : 15;
-      sec.lines.push({
-        id: generateLyricId('line'),
-        type: 'interlude',
-        text: label,
-        explicitDurationMs: Math.max(1000, durSec * 1000),
-      });
-      continue;
+    if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+      const interlude = parseInterludeTokens(trimmed.slice(1, -1).trim());
+      if (interlude) {
+        flushPendingBlankLines();
+        const sec = ensureCurrentSection();
+        sec.lines.push({
+          id: generateLyricId('line'),
+          type: 'interlude',
+          text: interlude.label,
+          explicitDurationMs: Math.max(1000, interlude.durSec * 1000),
+        });
+        continue;
+      }
     }
 
     // 3. Check for ChordPro notation inside the line: e.g. [C]When I [G]wake up
