@@ -7,29 +7,78 @@
 function isUnsafePattern(pattern) {
   if (!pattern || typeof pattern !== 'string') return false;
 
-  // 1. Nested repetition of character class, word, digit, or wildcard:
-  // e.g. ([a-zA-Z0-9]+)+, (\w+)+, (\d+)+, (.*)*, (.+)+, (a+)+
-  const catastrophicNested = /(?:^|[^\\])\((?:[a-zA-Z0-9_#b\s\w\d.-]+|\[[^\]]+\]|\.|\\[swdSWD])[*+](?:[a-zA-Z0-9_#b\s\w\d.-]*|\[[^\]]+\]|\.|\\[swdSWD])\)[*+]/;
-  if (catastrophicNested.test(pattern)) {
-    return true;
-  }
+  let inCharClass = false;
+  let isEscaped = false;
+  const groupStack = [];
 
-  // 2. Overlapping repetition with greedy wildcard or whitespace:
-  // e.g. (\s*.*)*, (\s+.*)+, (.*)*, (.*\s*)+
-  const wildcardReDoS = /(?:^|[^\\])\([^)]*(?:\.\*|\.\+|\\s\*\\w\*)[^)]*\)[*+]/;
-  if (wildcardReDoS.test(pattern)) {
-    return true;
-  }
+  for (let i = 0; i < pattern.length; i++) {
+    const char = pattern[i];
 
-  // 3. Repeated group containing trailing wildcard repetition:
-  // e.g. (.*)+, (.*)*, (.+)+
-  const greedyGroupNested = /(?:^|[^\\])\([^)]*\.[*+][^)]*\)[*+]/;
-  if (greedyGroupNested.test(pattern)) {
-    return true;
+    if (isEscaped) {
+      isEscaped = false;
+      continue;
+    }
+
+    if (char === '\\') {
+      isEscaped = true;
+      continue;
+    }
+
+    if (char === '[') {
+      inCharClass = true;
+      continue;
+    }
+
+    if (char === ']' && inCharClass) {
+      inCharClass = false;
+      continue;
+    }
+
+    if (inCharClass) {
+      continue;
+    }
+
+    if (char === '(') {
+      groupStack.push({ hasRepetition: false, wildcardCount: 0 });
+      continue;
+    }
+
+    if (char === ')') {
+      const group = groupStack.pop();
+      if (group) {
+        let nextIdx = i + 1;
+        const nextChar = nextIdx < pattern.length ? pattern[nextIdx] : '';
+        const isQuantifier = nextChar === '*' || nextChar === '+' || nextChar === '{';
+        if (isQuantifier && (group.hasRepetition || group.wildcardCount > 0)) {
+          // Nested repetition or repeated wildcard group: (a+)+, (.*)*, (\w+)+
+          return true;
+        }
+        if (groupStack.length > 0 && (group.hasRepetition || isQuantifier)) {
+          groupStack[groupStack.length - 1].hasRepetition = true;
+        }
+      }
+      continue;
+    }
+
+    if (char === '*' || char === '+' || char === '{') {
+      if (groupStack.length > 0) {
+        groupStack[groupStack.length - 1].hasRepetition = true;
+      }
+    }
+
+    if (char === '.' && i + 1 < pattern.length) {
+      const afterDot = pattern[i + 1];
+      if (afterDot === '*' || afterDot === '+') {
+        if (groupStack.length > 0) {
+          groupStack[groupStack.length - 1].wildcardCount++;
+        }
+      }
+    }
   }
 
   return false;
 }
+
 
 module.exports = {
   meta: {

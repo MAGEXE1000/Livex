@@ -157,6 +157,25 @@ export function resolveChordProgression(
   };
 }
 
+export const VALID_ROMAN_ROOT = /^[b#]?(?:iv|vi{0,3}|i{1,3}|v|IV|VI{0,3}|I{1,3}|V)$/;
+
+export function isRomanNumeralToken(raw: string): boolean {
+  if (!raw || typeof raw !== 'string') return false;
+  const token = raw.trim().replace(/^`|`$/g, '');
+  if (token.length < 1 || token.length > 16) return false;
+
+  const slashParts = token.split('/');
+  if (slashParts.length > 2) return false;
+  if (slashParts.length === 2 && !VALID_ROMAN_ROOT.test(slashParts[1])) {
+    return false;
+  }
+
+  const romanPattern =
+    /^[b#]?(?:iv|vi{0,3}|i{1,3}|v|IV|VI{0,3}|I{1,3}|V)(?:maj|min|dim|aug|sus|add|m)?(?:[ø°o][0-9]{0,2}|[0-9]{1,2})?(?:\([#b+-]?[0-9]{1,2}\))?$/;
+
+  return romanPattern.test(slashParts[0]);
+}
+
 /**
  * Intelligently extracts a structured chord progression from AI assistant response text and prompt context.
  * Parses:
@@ -320,39 +339,47 @@ export function extractChordProgressionFromText(
     }
   }
 
-const ROMAN_NUMERAL_REGEX =
-  /^[b#]?[ivIV]+(?:(?:maj|min|dim|aug|sus|add|m)[0-9]*)?[0-9ø°#b()^-]*(?:\/[b#]?[ivIV]+[0-9]*)?$/;
-
   // 5. Extract Roman Numerals / Harmonic Analysis
   let romanNumerals: string[] | undefined;
-  const analysisLineMatch = cleanText.match(
-    /(?:^|\n)[ \t]*(?:Harmonic Analysis|Analysis|An[aá]lisis|Roman Numerals):?[ \t]*(?:\r?\n[ \t]*)?(`?[b#]?[ivIV]+[^\n]+)/i
-  );
+  const lines = cleanText.split(/\r?\n/);
+  let analysisLine = '';
 
-  const romanTokenRegex =
-    /`([^`\r\n]+)`|(?:\b([b#]?[ivIV]+(?:(?:maj|min|dim|aug|sus|add|m)[0-9]*)?[0-9ø°#b()^-]*(?:\/[b#]?[ivIV]+[0-9]*)?)\b)/g;
+  for (let i = 0; i < lines.length; i++) {
+    const trimmed = lines[i].trim();
+    const match = trimmed.match(
+      /^(?:Harmonic Analysis|Analysis|An[aá]lisis|Roman Numerals)(?::\s*|\s+)(.*)$/i
+    );
+    if (match) {
+      const rest = match[1].trim();
+      if (rest) {
+        analysisLine = rest;
+      } else if (i + 1 < lines.length) {
+        analysisLine = lines[i + 1].trim();
+      }
+      break;
+    }
+  }
 
-  if (analysisLineMatch) {
-    const lineRomans = [...analysisLineMatch[1].matchAll(romanTokenRegex)]
-      .map((m) => {
-        const raw = (m[1] || m[2] || '').trim();
-        return ROMAN_NUMERAL_REGEX.test(raw) ? raw : '';
-      })
-      .filter(Boolean);
+  if (analysisLine) {
+    const rawTokens = analysisLine.split(/[\s,`\->→|]+/);
+    const lineRomans = rawTokens
+      .map((t) => t.trim())
+      .filter((t) => isRomanNumeralToken(t));
     if (lineRomans.length >= 2) {
       romanNumerals = lineRomans.slice(0, chords.length);
     }
   }
 
   if (!romanNumerals) {
-    const allRomans = [...text.matchAll(romanTokenRegex)]
-      .map((m) => {
-        const raw = (m[1] || m[2] || '').trim();
-        return ROMAN_NUMERAL_REGEX.test(raw) ? raw : '';
-      })
-      .filter(Boolean);
-    if (allRomans.length >= chords.length) {
-      romanNumerals = allRomans.slice(0, chords.length);
+    for (const line of lines) {
+      const rawTokens = line.split(/[\s,`\->→|]+/);
+      const lineRomans = rawTokens
+        .map((t) => t.trim())
+        .filter((t) => isRomanNumeralToken(t));
+      if (lineRomans.length >= chords.length && lineRomans.length >= 2) {
+        romanNumerals = lineRomans.slice(0, chords.length);
+        break;
+      }
     }
   }
 
@@ -378,9 +405,14 @@ const ROMAN_NUMERAL_REGEX =
   let genre: string | undefined;
   let mood: string | undefined;
 
-  const feelMatch = text.match(/(?:feel|sensaci[oó]n|groove)\s*:?\s*([^\n.,]+)/i);
-  if (feelMatch) {
-    feel = feelMatch[1].replace(/[*_]/g, '').trim();
+  const feelLineMatch = text.match(/(?:^|\n)[ \t]*(?:feel|sensaci[oó]n|groove)\b[^\n]*/i);
+  if (feelLineMatch) {
+    const rawLine = feelLineMatch[0].trim();
+    const afterLabel = rawLine.replace(/^(?:feel|sensaci[oó]n|groove)\b[ \t]*:?[ \t]*/i, '');
+    const cleanFeel = afterLabel.replace(/[*_]/g, '').split(/[.,]/)[0].trim();
+    if (cleanFeel) {
+      feel = cleanFeel;
+    }
   }
 
   const moodMatches = combinedContext.match(/\b(melanc(?:holic|[oó]lic[ao])|sad|dark|nostalgic|bittersweet|uplifting|happy|bright|dreamy|tense|chill|relaxed|energetic|emotional)\b/i);

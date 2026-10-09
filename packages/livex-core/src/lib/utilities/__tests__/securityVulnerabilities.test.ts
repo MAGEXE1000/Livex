@@ -81,6 +81,26 @@ Inspired by: Stevie Wonder
       expect(result?.genre).toBe('Neo-Soul');
       expect(result?.referenceContext).toContain('Stevie Wonder');
     });
+
+    it('processes adversarial roman numeral line in under 5ms without ReDoS', () => {
+      const adversarialRomans = 'Harmonic Analysis: ' + 'IV7'.repeat(1000) + ' ' + 'ii'.repeat(1000) + ' ' + 'bVII'.repeat(1000);
+      const start = performance.now();
+      const result = extractChordProgressionFromText(`Progression: \`C\` -> \`G\`\n${adversarialRomans}`);
+      const elapsed = performance.now() - start;
+
+      expect(elapsed).toBeLessThan(10);
+      expect(result).toBeDefined();
+    });
+
+    it('processes adversarial feel string in under 5ms without ReDoS', () => {
+      const adversarialFeel = 'feel' + ' '.repeat(5000) + ':' + ' '.repeat(5000) + 'laid back groove';
+      const start = performance.now();
+      const result = extractChordProgressionFromText(`Progression: \`C\` -> \`G\`\n${adversarialFeel}`);
+      const elapsed = performance.now() - start;
+
+      expect(elapsed).toBeLessThan(10);
+      expect(result?.feel).toBe('laid back groove');
+    });
   });
 
   describe('3. Lyrics Parser Linear-Time Validation', () => {
