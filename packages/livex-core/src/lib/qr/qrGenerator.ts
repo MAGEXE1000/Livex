@@ -418,39 +418,68 @@ export function generateQrSvg(
   } = {}
 ): string {
   const matrix = generateQrMatrix(text);
-  const size = options.size || 256;
-  const margin = options.margin ?? 4;
-  const fgColor = options.fgColor || '#000000';
-  const bgColor = options.bgColor || '#ffffff';
+  const escapeXml = (unsafe: string | number): string => {
+    return String(unsafe).replace(/[<>&'"]/g, (c) => {
+      switch (c) {
+        case '<':
+          return '&lt;';
+        case '>':
+          return '&gt;';
+        case '&':
+          return '&amp;';
+        case "'":
+          return '&apos;';
+        case '"':
+          return '&quot;';
+        default:
+          return c;
+      }
+    });
+  };
+
+  const sanitizeColor = (color: unknown, fallback: string): string => {
+    if (typeof color !== 'string') return fallback;
+    const cleaned = color.trim();
+    if (/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(cleaned)) {
+      return cleaned;
+    }
+    if (cleaned === 'transparent' || cleaned === 'currentColor') {
+      return cleaned;
+    }
+    if (/^(?:rgb|hsl)a?\(\s*[\d.%\s,]+\)$/i.test(cleaned)) {
+      return escapeXml(cleaned);
+    }
+    return fallback;
+  };
+
+  const rawSize = typeof options.size === 'number' ? options.size : parseInt(String(options.size || 256), 10);
+  const safeSize = Number.isFinite(rawSize) && rawSize > 0 ? Math.min(Math.max(Math.round(rawSize), 16), 4096) : 256;
+
+  const rawMargin = typeof options.margin === 'number' ? options.margin : parseInt(String(options.margin ?? 4), 10);
+  const safeMargin = Number.isFinite(rawMargin) && rawMargin >= 0 ? Math.min(Math.max(Math.round(rawMargin), 0), 64) : 4;
+
+  const safeFgColor = sanitizeColor(options.fgColor, '#000000');
+  const safeBgColor = sanitizeColor(options.bgColor, '#ffffff');
 
   const n = matrix.length;
-  const totalCells = n + margin * 2;
-  const cellSize = size / totalCells;
+  const totalCells = n + safeMargin * 2;
+  const cellSize = safeSize / totalCells;
 
   let pathData = '';
   for (let r = 0; r < n; r++) {
     for (let c = 0; c < n; c++) {
       if (matrix[r][c]) {
-        const x = (c + margin) * cellSize;
-        const y = (r + margin) * cellSize;
+        const x = (c + safeMargin) * cellSize;
+        const y = (r + safeMargin) * cellSize;
         pathData += `M${x.toFixed(2)},${y.toFixed(2)}h${cellSize.toFixed(2)}v${cellSize.toFixed(2)}h-${cellSize.toFixed(2)}z `;
       }
     }
   }
 
-  const sanitizeColor = (color: string, fallback: string): string => {
-    const cleaned = String(color).trim();
-    if (/^[#a-zA-Z0-9(),. %-]+$/.test(cleaned) && !/["'<>`\\]/.test(cleaned)) {
-      return cleaned;
-    }
-    return fallback;
-  };
+  const sizeStr = escapeXml(safeSize);
 
-  const safeFgColor = sanitizeColor(fgColor, '#000000');
-  const safeBgColor = sanitizeColor(bgColor, '#ffffff');
-
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" shape-rendering="crispEdges">
-  <rect width="${size}" height="${size}" fill="${safeBgColor}" rx="12" />
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${sizeStr} ${sizeStr}" width="${sizeStr}" height="${sizeStr}" shape-rendering="crispEdges">
+  <rect width="${sizeStr}" height="${sizeStr}" fill="${safeBgColor}" rx="12" />
   <path d="${pathData.trim()}" fill="${safeFgColor}" />
 </svg>`;
 }

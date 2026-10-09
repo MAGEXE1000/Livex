@@ -153,18 +153,37 @@ export interface StructuralLineParseResult {
  * Safely parse interlude content without polynomial backtracking ReDoS vulnerabilities
  */
 export function parseInterludeTokens(raw: string): { label: string; durSec: number } | null {
-  const match = raw.match(
-    /^(Interlude|Solo|Guitar\s+Solo|Piano\s+Solo|Instrumental)(?::\s*([^()]*?))?(?:\s*\((\d{1,4})s?\))?$/i
-  );
-  if (!match) return null;
-  const keyword = match[1].trim();
-  const subLabel = match[2]?.trim();
-  const durStr = match[3];
-  const durSec = durStr ? parseInt(durStr, 10) : 15;
+  if (!raw || typeof raw !== 'string') return null;
+  let text = raw.trim();
+  if (!text) return null;
+
+  // Extract optional trailing duration: e.g. (15s) or (15)
+  let durSec = 15;
+  const durationMatch = text.match(/\((\d{1,4})s?\)$/i);
+  if (durationMatch && durationMatch.index !== undefined) {
+    durSec = parseInt(durationMatch[1], 10);
+    text = text.slice(0, durationMatch.index).trim();
+  }
+
+  // Check for colon separation: e.g. "Interlude: Solo" or "Solo: Electric"
+  let keyword = text;
+  let subLabel = '';
+  const colonIndex = text.indexOf(':');
+  if (colonIndex !== -1) {
+    keyword = text.slice(0, colonIndex).trim();
+    subLabel = text.slice(colonIndex + 1).trim();
+  }
+
+  // Validate keyword against supported categories
+  const validKeywordRegex = /^(?:interlude|solo|guitar\s+solo|piano\s+solo|instrumental)$/i;
+  if (!validKeywordRegex.test(keyword)) {
+    return null;
+  }
+
   const label = subLabel || (keyword.toLowerCase() === 'interlude' ? 'Solo' : keyword);
   return {
     label: label.trim() || 'Solo',
-    durSec: isNaN(durSec) ? 15 : durSec,
+    durSec: isNaN(durSec) || durSec <= 0 ? 15 : Math.min(durSec, 3600),
   };
 }
 

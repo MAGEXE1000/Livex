@@ -174,10 +174,19 @@ export function extractChordProgressionFromText(
   const combinedContext = `${prompt || ''}\n${text}`;
 
   // 1. Check for explicit JSON or chord-progression block
-  const jsonBlockMatch = text.match(/```(?:chord-progression|json)?\n?([\s\S]*?)```/);
-  if (jsonBlockMatch) {
+  let jsonBlockContent: string | null = null;
+  const fenceStart = text.indexOf('```');
+  if (fenceStart !== -1) {
+    const fenceEnd = text.indexOf('```', fenceStart + 3);
+    if (fenceEnd !== -1) {
+      let rawBlock = text.slice(fenceStart + 3, fenceEnd);
+      rawBlock = rawBlock.replace(/^(?:chord-progression|json)\r?\n/i, '');
+      jsonBlockContent = rawBlock;
+    }
+  }
+  if (jsonBlockContent) {
     try {
-      const parsed = JSON.parse(jsonBlockMatch[1]);
+      const parsed = JSON.parse(jsonBlockContent.trim());
       if (parsed && Array.isArray(parsed.chords) && parsed.chords.length >= 2) {
         return {
           chords: parsed.chords.map((c: any) => String(c).trim()).filter(Boolean),
@@ -318,11 +327,14 @@ export function extractChordProgressionFromText(
   );
 
   const romanTokenRegex =
-    /`([b#]?[ivIV]+[a-zA-Z0-9#b()\/+ø°^-]*)`|(?:\b([b#]?[ivIV]+(?:(?:maj|min|dim|aug|sus)(?:7|9|11|13)?)?[0-9#b()\/+ø°^-]*)\b)/g;
+    /`([^`\r\n]+)`|(?:\b([b#]?[ivIV]+(?:maj|min|dim|aug|sus)?[0-9#b()\/+ø°^-]*)\b)/g;
 
   if (analysisLineMatch) {
     const lineRomans = [...analysisLineMatch[1].matchAll(romanTokenRegex)]
-      .map((m) => m[1] || m[2])
+      .map((m) => {
+        const raw = (m[1] || m[2] || '').trim();
+        return /^[b#]?[ivIV]+[a-zA-Z0-9#b()\/+ø°^-]*$/.test(raw) ? raw : '';
+      })
       .filter(Boolean);
     if (lineRomans.length >= 2) {
       romanNumerals = lineRomans.slice(0, chords.length);
@@ -331,7 +343,10 @@ export function extractChordProgressionFromText(
 
   if (!romanNumerals) {
     const allRomans = [...text.matchAll(romanTokenRegex)]
-      .map((m) => m[1] || m[2])
+      .map((m) => {
+        const raw = (m[1] || m[2] || '').trim();
+        return /^[b#]?[ivIV]+[a-zA-Z0-9#b()\/+ø°^-]*$/.test(raw) ? raw : '';
+      })
       .filter(Boolean);
     if (allRomans.length >= chords.length) {
       romanNumerals = allRomans.slice(0, chords.length);
@@ -340,7 +355,7 @@ export function extractChordProgressionFromText(
 
   // 6. Extract Tempo / BPM
   let tempo: number | undefined;
-  const tempoMatch = combinedContext.match(/(?:(?:tempo|bpm)\s*:?\s*(\d{2,3})|(\d{2,3})\s*bpm)/i);
+  const tempoMatch = combinedContext.match(/(?:\b(?:tempo|bpm)(?::?\s*|\s+)(\d{2,3})\b|\b(\d{2,3})\s*bpm\b)/i);
   if (tempoMatch) {
     const val = parseInt(tempoMatch[1] || tempoMatch[2], 10);
     if (val >= 40 && val <= 240) {
@@ -350,7 +365,7 @@ export function extractChordProgressionFromText(
 
   // 7. Extract Time Signature
   let timeSignature: string | undefined;
-  const timeSigMatch = combinedContext.match(/(?:(?:time signature|comp[aá]s)\s*:?\s*([23456789]\/[248])|\b([346]\/4|6\/8|12\/8)\b)/i);
+  const timeSigMatch = combinedContext.match(/(?:(?:time signature|comp[aá]s)(?::?\s*)([23456789]\/[248])|\b([346]\/4|6\/8|12\/8)\b)/i);
   if (timeSigMatch) {
     timeSignature = timeSigMatch[1] || timeSigMatch[2];
   }
@@ -381,19 +396,28 @@ export function extractChordProgressionFromText(
 
   // 9. Extract Reference / Inspired By Context
   let referenceContext: string | undefined;
-  const refPromptMatch = combinedContext.match(/(?:analyze(?: the)? harmonic characteristics of|characteristics of|inspired by|in the style of|al estilo de|inspirado en)\s+([^,.\n]{2,60})(?:and create|and write|without copying|$)/i);
-  if (refPromptMatch) {
-    const refTarget = refPromptMatch[1].replace(/[*_]/g, '').trim();
-    if (refTarget && refTarget.length > 2 && refTarget.length < 60) {
-      referenceContext = `Inspired by the harmonic characteristics of ${refTarget} (original progression)`;
+  const refTriggerRegex = /\b(?:analyze(?: the)? harmonic characteristics of|characteristics of|inspired by|in the style of|al estilo de|inspirado en):?\s+/i;
+  const refTriggerMatch = combinedContext.match(refTriggerRegex);
+  if (refTriggerMatch && refTriggerMatch.index !== undefined) {
+    const afterRef = combinedContext.slice(refTriggerMatch.index + refTriggerMatch[0].length);
+    const endMatch = afterRef.match(/^(.*?)(?:,\s*|\.\s*|\r?\n|\b(?:and create|and write|without copying)\b|$)/i);
+    if (endMatch) {
+      const refTarget = endMatch[1].replace(/[*_]/g, '').trim();
+      if (refTarget.length >= 2 && refTarget.length <= 60) {
+        referenceContext = `Inspired by the harmonic characteristics of ${refTarget} (original progression)`;
+      }
     }
   }
 
   // 10. Extract Explanation ("Why it works" / voice leading)
   let explanation: string | undefined;
-  const whyMatch = text.match(/(?:(?:\*{1,2})?(?:Why It Works|Por qu[eé] funciona|Harmonic Movement|Voice Leading)(?:\*{1,2})?:?[ \t]*)([\s\S]*?)(?:\n\s*\n|\n###|\n\*\*|$)/i);
-  if (whyMatch) {
-    const cleanWhy = whyMatch[1].replace(/[*_`]/g, '').replace(/\n+/g, ' ').trim();
+  const whyHeaderRegex = /(?:\*{1,2})?(?:Why It Works|Por qu[eé] funciona|Harmonic Movement|Voice Leading)(?:\*{1,2})?:?[ \t]*/i;
+  const whyHeaderMatch = text.match(whyHeaderRegex);
+  if (whyHeaderMatch && whyHeaderMatch.index !== undefined) {
+    const afterWhy = text.slice(whyHeaderMatch.index + whyHeaderMatch[0].length);
+    const endIdx = afterWhy.search(/\n\s*\n|\n###|\n\*\*/);
+    const whyBlock = endIdx !== -1 ? afterWhy.slice(0, endIdx) : afterWhy;
+    const cleanWhy = whyBlock.replace(/[*_`]/g, '').replace(/\n+/g, ' ').trim();
     if (cleanWhy.length > 10) {
       explanation = cleanWhy.length > 240 ? cleanWhy.slice(0, 237) + '…' : cleanWhy;
     }

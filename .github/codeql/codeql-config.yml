@@ -1,5 +1,14 @@
 name: "CodeQL config"
+paths:
+  - apps
+  - packages
 paths-ignore:
+  - 'node_modules/**'
   - '**/node_modules/**'
+  - 'dist/**'
   - '**/dist/**'
   - '**/android-web/**'
+query-filters:
+  - exclude:
+      filename:
+        - /node_modules\//

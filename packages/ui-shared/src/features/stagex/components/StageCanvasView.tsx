@@ -616,7 +616,14 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
 
   const handleUpdateElement = useCallback(
     (updates: Record<string, any>) => {
-      if (!selectedElement) return;
+      if (!selectedElement || !updates || typeof updates !== 'object' || Array.isArray(updates)) return;
+      if (
+        Object.prototype.hasOwnProperty.call(updates, '__proto__') ||
+        Object.prototype.hasOwnProperty.call(updates, 'constructor') ||
+        Object.prototype.hasOwnProperty.call(updates, 'prototype')
+      ) {
+        return;
+      }
       StageBridge.updateElement(iframeRef.current, selectedElement.id, updates);
       setSelectedElement((prev: any) => (prev ? { ...prev, ...updates } : null));
 
@@ -634,41 +641,32 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
         const raw = localStorage.getItem('stagecoreProject');
         if (raw) {
           const proj = JSON.parse(raw);
-          const updated = (proj.elements || []).map((e: any) =>
-            e.id === selectedElement.id ? { ...e, ...updates } : e
-          );
-          proj.elements = updated;
-          const rawIdx = proj.currentSceneIdx;
-          if (
-            rawIdx === '__proto__' ||
-            rawIdx === 'constructor' ||
-            rawIdx === 'prototype'
-          ) {
-            return;
-          }
-          const sceneIdx =
-            typeof rawIdx === 'number' &&
-            Number.isInteger(rawIdx) &&
-            rawIdx >= 0 &&
-            rawIdx < 10000
-              ? rawIdx
-              : 0;
-          if (
-            Array.isArray(proj.scenes) &&
-            sceneIdx < proj.scenes.length &&
-            Object.prototype.hasOwnProperty.call(proj.scenes, sceneIdx)
-          ) {
-            const targetScene = proj.scenes[sceneIdx];
-            if (
-              targetScene &&
-              typeof targetScene === 'object' &&
-              targetScene !== Object.prototype &&
-              !Object.prototype.hasOwnProperty.call(Object.prototype, sceneIdx)
-            ) {
-              targetScene.elements = updated;
+          if (proj && typeof proj === 'object' && !Array.isArray(proj)) {
+            const rawElements = Array.isArray(proj.elements) ? proj.elements : [];
+            const updated = rawElements.map((e: any) =>
+              e && e.id === selectedElement.id ? { ...e, ...updates } : e
+            );
+            proj.elements = updated;
+
+            if (Array.isArray(proj.scenes)) {
+              const rawIdx = proj.currentSceneIdx;
+              const sceneIdx =
+                typeof rawIdx === 'number' &&
+                Number.isInteger(rawIdx) &&
+                rawIdx >= 0 &&
+                rawIdx < proj.scenes.length
+                  ? rawIdx
+                  : 0;
+
+              if (proj.scenes[sceneIdx] && typeof proj.scenes[sceneIdx] === 'object') {
+                proj.scenes[sceneIdx] = {
+                  ...proj.scenes[sceneIdx],
+                  elements: updated,
+                };
+              }
             }
+            localStorage.setItem('stagecoreProject', JSON.stringify(proj));
           }
-          localStorage.setItem('stagecoreProject', JSON.stringify(proj));
         }
       } catch {}
     },

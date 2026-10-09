@@ -64,12 +64,12 @@ public final class SafeContentResolver {
         String path = uri.getPath();
         if (path != null) {
             try {
-                java.io.File file = new java.io.File(path);
-                String canonical = file.getCanonicalPath();
-                if (canonical.equals("/data") || canonical.startsWith("/data/")
-                        || canonical.startsWith("/data" + java.io.File.separator)
-                        || canonical.contains("/data/")
-                        || canonical.contains(java.io.File.separator + "data" + java.io.File.separator)) {
+                java.nio.file.Path normalized =
+                        java.nio.file.FileSystems.getDefault().getPath(path).normalize();
+                java.nio.file.Path dataPath =
+                        java.nio.file.FileSystems.getDefault().getPath("/data").normalize();
+                if (normalized.startsWith(dataPath) || normalized.startsWith("/data") ||
+                    normalized.toString().equals("/data") || normalized.toString().startsWith("/data/")) {
                     return false;
                 }
             } catch (Exception ignored) {
