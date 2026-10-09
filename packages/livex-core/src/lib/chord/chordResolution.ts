@@ -346,11 +346,20 @@ export function extractChordProgressionFromText(
 
   for (let i = 0; i < lines.length; i++) {
     const trimmed = lines[i].trim();
-    const match = trimmed.match(
-      /^(?:Harmonic Analysis|Analysis|An[aá]lisis|Roman Numerals)(?::\s*|\s+)(.*)$/i
-    );
-    if (match) {
-      const rest = match[1].trim();
+    const lower = trimmed.toLowerCase();
+    const prefixes = ['harmonic analysis', 'analysis', 'análisis', 'analisis', 'roman numerals'];
+    let headerLen = -1;
+    for (const prefix of prefixes) {
+      if (lower.startsWith(prefix)) {
+        headerLen = prefix.length;
+        break;
+      }
+    }
+    if (headerLen !== -1) {
+      let rest = trimmed.slice(headerLen).trim();
+      if (rest.startsWith(':')) {
+        rest = rest.slice(1).trim();
+      }
       if (rest) {
         analysisLine = rest;
       } else if (i + 1 < lines.length) {
@@ -405,13 +414,27 @@ export function extractChordProgressionFromText(
   let genre: string | undefined;
   let mood: string | undefined;
 
-  const feelLineMatch = text.match(/(?:^|\n)[ \t]*(?:feel|sensaci[oó]n|groove)\b[^\n]*/i);
-  if (feelLineMatch) {
-    const rawLine = feelLineMatch[0].trim();
-    const afterLabel = rawLine.replace(/^(?:feel|sensaci[oó]n|groove)\b[ \t]*:?[ \t]*/i, '');
-    const cleanFeel = afterLabel.replace(/[*_]/g, '').split(/[.,]/)[0].trim();
-    if (cleanFeel) {
-      feel = cleanFeel;
+  for (const line of lines) {
+    const trimmed = line.trim();
+    const lower = trimmed.toLowerCase();
+    const feelPrefixes = ['feel', 'sensación', 'sensacion', 'groove'];
+    let headerLen = -1;
+    for (const prefix of feelPrefixes) {
+      if (lower.startsWith(prefix)) {
+        headerLen = prefix.length;
+        break;
+      }
+    }
+    if (headerLen !== -1) {
+      let rest = trimmed.slice(headerLen).trim();
+      if (rest.startsWith(':')) {
+        rest = rest.slice(1).trim();
+      }
+      const cleanFeel = rest.replace(/[*_]/g, '').split(/[.,]/)[0].trim();
+      if (cleanFeel) {
+        feel = cleanFeel;
+        break;
+      }
     }
   }
 
