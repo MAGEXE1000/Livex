@@ -620,23 +620,25 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
   const handleUpdateElement = useCallback(
     (updates: Record<string, any>) => {
       if (!selectedElement || !updates || typeof updates !== 'object' || Array.isArray(updates)) return;
-      if (
-        Object.prototype.hasOwnProperty.call(updates, '__proto__') ||
-        Object.prototype.hasOwnProperty.call(updates, 'constructor') ||
-        Object.prototype.hasOwnProperty.call(updates, 'prototype')
-      ) {
-        return;
+      const FORBIDDEN_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+      const safeUpdates: Record<string, any> = Object.create(null);
+      for (const [key, val] of Object.entries(updates)) {
+        if (!FORBIDDEN_KEYS.has(key) && Object.prototype.hasOwnProperty.call(updates, key)) {
+          safeUpdates[key] = val;
+        }
       }
-      StageBridge.updateElement(iframeRef.current, selectedElement.id, updates);
-      setSelectedElement((prev: any) => (prev ? { ...prev, ...updates } : null));
+      if (Object.keys(safeUpdates).length === 0) return;
+
+      StageBridge.updateElement(iframeRef.current, selectedElement.id, safeUpdates);
+      setSelectedElement((prev: any) => (prev ? { ...prev, ...safeUpdates } : null));
 
       // Keep useStagexStore elements synchronized in real time
       const store = useStagexStore.getState();
       const currentList = store.elements || [];
       const exists = currentList.some((e) => e.id === selectedElement.id);
       const nextElements = exists
-        ? currentList.map((e) => (e.id === selectedElement.id ? { ...e, ...updates } : e))
-        : [...currentList, { ...selectedElement, ...updates }];
+        ? currentList.map((e) => (e.id === selectedElement.id ? { ...e, ...safeUpdates } : e))
+        : [...currentList, { ...selectedElement, ...safeUpdates }];
       useStagexStore.setState({ elements: nextElements });
 
       // Keep localStorage stagecoreProject synchronized
@@ -647,7 +649,7 @@ export const StageCanvasView: React.FC<StageCanvasViewProps> = ({
           if (proj && typeof proj === 'object' && !Array.isArray(proj)) {
             const rawElements = Array.isArray(proj.elements) ? proj.elements : [];
             const updated = rawElements.map((e: any) =>
-              e && e.id === selectedElement.id ? { ...e, ...updates } : e
+              e && e.id === selectedElement.id ? { ...e, ...safeUpdates } : e
             );
             proj.elements = updated;
 

@@ -182,10 +182,10 @@ export function extractClientRecommendations(
 
   // 4. Heuristic: Drum Beat Creation
   const isDrumPattern =
-    /(?:drum beat|drum groove|patr[oó]n de bater[ií]a|rock beat|energetic rock beat|syncopated snare)/i.test(combinedContext) &&
+    /(?:energetic rock beat|rock beat|drum beat|drum groove|patr[oó]n de bater[ií]a|syncopated snare)/i.test(combinedContext) &&
     /(?:kick|bombo|snare|caja|hi-hat|hihat)/i.test(text);
   if (isDrumPattern) {
-    const tempoMatch = combinedContext.match(/(?:\b(?:tempo|bpm)(?::?\s*|\s+)(\d{2,3})\b|\b(\d{2,3})\s*bpm\b)/i);
+    const tempoMatch = combinedContext.match(/(?:\b(?:tempo|bpm):?[ \t]+(\d{2,3})\b|\b(\d{2,3})[ \t]*bpm\b)/i);
     const bpm = tempoMatch ? parseInt(tempoMatch[1] || tempoMatch[2], 10) : 124;
 
     const actionPayload: AssistantActionPayload = {
@@ -271,7 +271,7 @@ export function extractClientRecommendations(
 
   // 6. Heuristic: Vocal Warmup Routine
   const isVocalWarmup =
-    /(?:warm\s*up|calentamiento|vocalex|sirens|lip trills|arpeggios|warmup)/i.test(combinedContext) &&
+    /(?:warm\s*up|calentamiento|vocalex|sirens|lip trills|arpeggios)/i.test(combinedContext) &&
     /(?:vocal|voice|voz|warmup|singing|cantar)/i.test(combinedContext);
   if (isVocalWarmup && /(?:routine|rutina|minutes?|minutos?|ejercicio)/i.test(text)) {
     const actionPayload: AssistantActionPayload = {

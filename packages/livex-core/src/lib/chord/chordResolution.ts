@@ -320,6 +320,9 @@ export function extractChordProgressionFromText(
     }
   }
 
+const ROMAN_NUMERAL_REGEX =
+  /^[b#]?[ivIV]+(?:(?:maj|min|dim|aug|sus|add|m)[0-9]*)?[0-9ø°#b()^-]*(?:\/[b#]?[ivIV]+[0-9]*)?$/;
+
   // 5. Extract Roman Numerals / Harmonic Analysis
   let romanNumerals: string[] | undefined;
   const analysisLineMatch = cleanText.match(
@@ -327,13 +330,13 @@ export function extractChordProgressionFromText(
   );
 
   const romanTokenRegex =
-    /`([^`\r\n]+)`|(?:\b([b#]?[ivIV]+(?:maj|min|dim|aug|sus)?[0-9#b()\/+ø°^-]*)\b)/g;
+    /`([^`\r\n]+)`|(?:\b([b#]?[ivIV]+(?:(?:maj|min|dim|aug|sus|add|m)[0-9]*)?[0-9ø°#b()^-]*(?:\/[b#]?[ivIV]+[0-9]*)?)\b)/g;
 
   if (analysisLineMatch) {
     const lineRomans = [...analysisLineMatch[1].matchAll(romanTokenRegex)]
       .map((m) => {
         const raw = (m[1] || m[2] || '').trim();
-        return /^[b#]?[ivIV]+[a-zA-Z0-9#b()\/+ø°^-]*$/.test(raw) ? raw : '';
+        return ROMAN_NUMERAL_REGEX.test(raw) ? raw : '';
       })
       .filter(Boolean);
     if (lineRomans.length >= 2) {
@@ -345,7 +348,7 @@ export function extractChordProgressionFromText(
     const allRomans = [...text.matchAll(romanTokenRegex)]
       .map((m) => {
         const raw = (m[1] || m[2] || '').trim();
-        return /^[b#]?[ivIV]+[a-zA-Z0-9#b()\/+ø°^-]*$/.test(raw) ? raw : '';
+        return ROMAN_NUMERAL_REGEX.test(raw) ? raw : '';
       })
       .filter(Boolean);
     if (allRomans.length >= chords.length) {
@@ -355,7 +358,7 @@ export function extractChordProgressionFromText(
 
   // 6. Extract Tempo / BPM
   let tempo: number | undefined;
-  const tempoMatch = combinedContext.match(/(?:\b(?:tempo|bpm)(?::?\s*|\s+)(\d{2,3})\b|\b(\d{2,3})\s*bpm\b)/i);
+  const tempoMatch = combinedContext.match(/(?:\b(?:tempo|bpm):?[ \t]+(\d{2,3})\b|\b(\d{2,3})[ \t]*bpm\b)/i);
   if (tempoMatch) {
     const val = parseInt(tempoMatch[1] || tempoMatch[2], 10);
     if (val >= 40 && val <= 240) {
@@ -365,7 +368,7 @@ export function extractChordProgressionFromText(
 
   // 7. Extract Time Signature
   let timeSignature: string | undefined;
-  const timeSigMatch = combinedContext.match(/(?:(?:time signature|comp[aá]s)(?::?\s*)([23456789]\/[248])|\b([346]\/4|6\/8|12\/8)\b)/i);
+  const timeSigMatch = combinedContext.match(/(?:(?:time signature|comp[aá]s):?[ \t]*([23456789]\/[248])|\b([346]\/4|6\/8|12\/8)\b)/i);
   if (timeSigMatch) {
     timeSignature = timeSigMatch[1] || timeSigMatch[2];
   }
@@ -380,7 +383,7 @@ export function extractChordProgressionFromText(
     feel = feelMatch[1].replace(/[*_]/g, '').trim();
   }
 
-  const moodMatches = combinedContext.match(/\b(melancholic|melanc[oó]lic[ao]|sad|dark|nostalgic|bittersweet|uplifting|happy|bright|dreamy|tense|chill|relaxed|energetic|emotional)\b/i);
+  const moodMatches = combinedContext.match(/\b(melanc(?:holic|[oó]lic[ao])|sad|dark|nostalgic|bittersweet|uplifting|happy|bright|dreamy|tense|chill|relaxed|energetic|emotional)\b/i);
   if (moodMatches) {
     const m = moodMatches[1].toLowerCase();
     mood = m.startsWith('melanc') ? 'Melancholic' : m.charAt(0).toUpperCase() + m.slice(1);
@@ -400,12 +403,18 @@ export function extractChordProgressionFromText(
   const refTriggerMatch = combinedContext.match(refTriggerRegex);
   if (refTriggerMatch && refTriggerMatch.index !== undefined) {
     const afterRef = combinedContext.slice(refTriggerMatch.index + refTriggerMatch[0].length);
-    const endMatch = afterRef.match(/^(.*?)(?:,\s*|\.\s*|\r?\n|\b(?:and create|and write|without copying)\b|$)/i);
-    if (endMatch) {
-      const refTarget = endMatch[1].replace(/[*_]/g, '').trim();
-      if (refTarget.length >= 2 && refTarget.length <= 60) {
-        referenceContext = `Inspired by the harmonic characteristics of ${refTarget} (original progression)`;
+    const stopPhrases = [',', '.', '\n', '\r', 'and create', 'and write', 'without copying'];
+    let endIdx = afterRef.length;
+    const lowerAfter = afterRef.toLowerCase();
+    for (const phrase of stopPhrases) {
+      const idx = lowerAfter.indexOf(phrase);
+      if (idx !== -1 && idx < endIdx) {
+        endIdx = idx;
       }
+    }
+    const refTarget = afterRef.slice(0, endIdx).replace(/[*_]/g, '').trim();
+    if (refTarget.length >= 2 && refTarget.length <= 60) {
+      referenceContext = `Inspired by the harmonic characteristics of ${refTarget} (original progression)`;
     }
   }
 

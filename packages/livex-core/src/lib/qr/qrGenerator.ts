@@ -446,7 +446,7 @@ export function generateQrSvg(
     if (cleaned === 'transparent' || cleaned === 'currentColor') {
       return cleaned;
     }
-    if (/^(?:rgb|hsl)a?\(\s*[\d.%\s,]+\)$/i.test(cleaned)) {
+    if (cleaned.length <= 64 && /^(?:rgb|hsl)a?\([0-9.,%\s/]+\)$/i.test(cleaned)) {
       return escapeXml(cleaned);
     }
     return fallback;

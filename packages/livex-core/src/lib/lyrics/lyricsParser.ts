@@ -15,7 +15,7 @@ import type {
  * Regex detecting common musical chords (roots A-G with sharps/flats, extensions, and slash basses)
  */
 const CHORD_TOKEN_REGEX =
-  /^[A-G][b#]?(?:m|maj|min|dim|aug|sus|add|M)?[0-9]*(?:(?:maj|min|dim|aug|sus|add)[0-9]*)?(?:\/[A-G][b#]?)?$/;
+  /^[A-G][b#]?(?:(?:maj|min|dim|aug|sus|add|m|M)[0-9]*(?:(?:sus|add)[0-9]*)?|[0-9]+(?:(?:sus|add|maj|min|dim|aug)[0-9]*)?)?(?:[#b][0-9]+)*(?:\([^)]*\))?(?:\/[A-G][b#]?)?$/;
 
 /**
  * Common section header patterns
@@ -175,8 +175,15 @@ export function parseInterludeTokens(raw: string): { label: string; durSec: numb
   }
 
   // Validate keyword against supported categories
-  const validKeywordRegex = /^(?:interlude|solo|guitar\s+solo|piano\s+solo|instrumental)$/i;
-  if (!validKeywordRegex.test(keyword)) {
+  const VALID_INTERLUDE_KEYWORDS = new Set([
+    'interlude',
+    'solo',
+    'guitar solo',
+    'piano solo',
+    'instrumental',
+  ]);
+  const normalizedKeyword = keyword.toLowerCase().replace(/\s+/g, ' ');
+  if (!VALID_INTERLUDE_KEYWORDS.has(normalizedKeyword)) {
     return null;
   }
 
@@ -228,16 +235,16 @@ export function parseLineStructuralElement(lineText: string): StructuralLinePars
     rawHeaderContent = bracketMatch[1].trim();
   } else {
     // Colon: Verse 1:, Chorus:, Bridge:, Intro:, Outro:, Pre-Chorus:, etc.
-    const colonMatch = trimmed.match(/^([A-Za-z0-9\s_—–-]+):$/);
+    const colonMatch = trimmed.match(/^([A-Za-z0-9 _—–-]+):$/);
     if (colonMatch) {
       rawHeaderContent = colonMatch[1].trim();
     } else {
       // Standalone keyword check: e.g. "Verse 1", "Verse 2", "Chorus", "Bridge", "Intro", "Outro", "Pre-Chorus", "Verso 1", "Coro"
       const keywordMatch = trimmed.match(
-        /^(verse(?:\s*\d+)?|chorus(?:\s*\d+)?|bridge(?:\s*\d+)?|intro|outro|pre-?chorus(?:\s*\d+)?|hook|tag|ending|coro(?:\s*\d+)?|verso(?:\s*\d+)?|puente(?:\s*\d+)?|estrofa(?:\s*\d+)?)$/i
+        /^(?:verse|chorus|bridge|intro|outro|pre-?chorus|hook|tag|ending|coro|verso|puente|estrofa)(?:[ \t]+\d+)?$/i
       );
       if (keywordMatch) {
-        rawHeaderContent = keywordMatch[1].trim();
+        rawHeaderContent = keywordMatch[0].trim();
       }
     }
   }
