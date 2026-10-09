@@ -27,7 +27,7 @@
     "@tolgee/i18next": "^7.1.1",
     "@tolgee/react": "^7.1.1",
     "clsx": "catalog:",
-    "firebase": "^12.16.0",
+    "firebase": "^12.19.0",
     "i18next": "^26.3.6",
     "lottie-react": "^2.4.1",
     "lucide-react": "catalog:",
