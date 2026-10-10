@@ -40,18 +40,39 @@ android {
             keyPassword 'android'
         }
         release {
+            def productionReleaseRequested = System.getenv("STUDIO_PRODUCTION_RELEASE") == "true"
             def ksFile = file('release.keystore')
-            def ksPwd = System.getenv("ANDROID_KEYSTORE_PASSWORD") ?: "Livex2026KeyStore!"
-            def ksAlias = System.getenv("ANDROID_KEY_ALIAS") ?: "livex-key"
-            def ksKeyPwd = System.getenv("ANDROID_KEY_PASSWORD") ?: "Livex2026KeyStore!"
- 
-            if (ksFile.exists()) {
+
+            if (productionReleaseRequested) {
+                def ksPwd = System.getenv("ANDROID_KEYSTORE_PASSWORD")
+                if (ksPwd == null || ksPwd.isEmpty()) {
+                    throw new GradleException("STUDIO_PRODUCTION_RELEASE is set but ANDROID_KEYSTORE_PASSWORD is empty.")
+                }
+                if (!ksFile.exists()) {
+                    throw new GradleException("STUDIO_PRODUCTION_RELEASE is set but release.keystore does not exist at ${ksFile.absolutePath}.")
+                }
+                def ksAlias = System.getenv("ANDROID_KEY_ALIAS")
+                def ksKeyPwd = System.getenv("ANDROID_KEY_PASSWORD")
+                if (ksAlias == null || ksAlias.isEmpty() || ksKeyPwd == null || ksKeyPwd.isEmpty()) {
+                    throw new GradleException("Production release requested but ANDROID_KEY_ALIAS or ANDROID_KEY_PASSWORD is empty.")
+                }
+
                 storeFile ksFile
                 storePassword ksPwd
                 keyAlias ksAlias
                 keyPassword ksKeyPwd
             } else {
-                throw new GradleException("CRITICAL SECURITY FAILURE: release.keystore missing at ${ksFile.absolutePath}")
+                if (ksFile.exists()) {
+                    storeFile ksFile
+                    storePassword System.getenv("ANDROID_KEYSTORE_PASSWORD") ?: "Livex2026KeyStore!"
+                    keyAlias System.getenv("ANDROID_KEY_ALIAS") ?: "livex-key"
+                    keyPassword System.getenv("ANDROID_KEY_PASSWORD") ?: "Livex2026KeyStore!"
+                } else {
+                    storeFile file('debug.keystore')
+                    storePassword 'android'
+                    keyAlias 'androiddebugkey'
+                    keyPassword 'android'
+                }
             }
         }
     }
