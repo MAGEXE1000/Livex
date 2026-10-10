@@ -345,8 +345,9 @@ export function parseAndNormalizeVersion(raw: string | null | undefined): string
     logVersionTransformation('parseAndNormalizeVersion', raw, null);
     return null;
   }
-  const match = raw.match(
-    /[vV]?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-([0-9A-Za-z.-]+))?(?:\+[0-9A-Za-z.-]+)?/
+  const trimmed = raw.trim();
+  const match = trimmed.match(
+    /^[vV]?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-([0-9A-Za-z.-]+))?(?:\+[0-9A-Za-z.-]+)?$/
   );
   if (!match) {
     logVersionTransformation('parseAndNormalizeVersion', raw, null);
