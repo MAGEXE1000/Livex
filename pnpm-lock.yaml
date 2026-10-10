@@ -246,8 +246,8 @@ importers:
         specifier: 8.4.3
         version: 8.4.3
       '@capacitor/filesystem':
-        specifier: ^8.1.2
-        version: 8.1.2(@capacitor/core@8.4.3)
+        specifier: ^8.1.4
+        version: 8.1.4(@capacitor/core@8.4.3)
       '@capacitor/local-notifications':
         specifier: ^8.2.0
         version: 8.2.0(@capacitor/core@8.4.3)
@@ -470,8 +470,8 @@ importers:
         specifier: 8.4.3
         version: 8.4.3
       '@capacitor/filesystem':
-        specifier: ^8.1.2
-        version: 8.1.2(@capacitor/core@8.4.3)
+        specifier: ^8.1.4
+        version: 8.1.4(@capacitor/core@8.4.3)
       '@capacitor/local-notifications':
         specifier: ^8.2.0
         version: 8.2.0(@capacitor/core@8.4.3)
@@ -573,8 +573,8 @@ importers:
         specifier: 8.4.3
         version: 8.4.3
       '@capacitor/filesystem':
-        specifier: ^8.1.2
-        version: 8.1.2(@capacitor/core@8.4.3)
+        specifier: ^8.1.4
+        version: 8.1.4(@capacitor/core@8.4.3)
       '@capacitor/local-notifications':
         specifier: ^8.2.0
         version: 8.2.0(@capacitor/core@8.4.3)
@@ -682,8 +682,8 @@ importers:
         specifier: 8.4.3
         version: 8.4.3
       '@capacitor/filesystem':
-        specifier: ^8.1.2
-        version: 8.1.2(@capacitor/core@8.4.3)
+        specifier: ^8.1.4
+        version: 8.1.4(@capacitor/core@8.4.3)
       '@capacitor/local-notifications':
         specifier: ^8.2.0
         version: 8.2.0(@capacitor/core@8.4.3)
@@ -809,8 +809,8 @@ importers:
         specifier: 8.4.3
         version: 8.4.3
       '@capacitor/filesystem':
-        specifier: ^8.1.2
-        version: 8.1.2(@capacitor/core@8.4.3)
+        specifier: ^8.1.4
+        version: 8.1.4(@capacitor/core@8.4.3)
       '@capacitor/local-notifications':
         specifier: ^8.2.0
         version: 8.2.0(@capacitor/core@8.4.3)
@@ -1065,8 +1065,8 @@ packages:
   '@capacitor/core@8.4.3':
     resolution: {integrity: sha512-5S04bZa2I9RabRaqhmwynR54Xkj9x/cKW8R6nXT5ZYg/3JkuOzyIEijIrb18Jra5bMT+f6HX7KonCyvNob6+0g==}
 
-  '@capacitor/filesystem@8.1.2':
-    resolution: {integrity: sha512-doaaMfGoFR2hWU6aV6u83I+5ZsGyJVq+Gz4r9lMpJzUKMm1eMu0hLnFdV1aXZlU9FlK/RndFrVD8oRZfNOqWgQ==}
+  '@capacitor/filesystem@8.1.4':
+    resolution: {integrity: sha512-8MXmt10cb+dGWoh8jUeO8on0U6iETQCX5k+fmdB278PZ3MYDEVGQo08+hroaOtUbK3+5stiRk4/K6QBHKepv0A==}
     peerDependencies:
       '@capacitor/core': 8.4.3
 
@@ -5621,7 +5621,7 @@ snapshots:
     dependencies:
       tslib: 2.8.1
 
-  '@capacitor/filesystem@8.1.2(@capacitor/core@8.4.3)':
+  '@capacitor/filesystem@8.1.4(@capacitor/core@8.4.3)':
     dependencies:
       '@capacitor/core': 8.4.3
       '@capacitor/synapse': 1.0.4
