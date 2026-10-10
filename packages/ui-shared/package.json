@@ -9,7 +9,7 @@
     "**/*.css"
   ],
   "dependencies": {
-    "@base-ui/react": "^1.7.0",
+    "@base-ui/react": "^1.8.0",
     "@capacitor-firebase/authentication": "^8.3.0",
     "@capacitor/android": "^8.4.3",
     "@capacitor/app": "^8.1.0",
