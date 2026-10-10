@@ -10,7 +10,7 @@ function parseNativeVersion(fileContent) {
   }
   const versionStr = matches[0][1];
   const semverRegex =
-    /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/;
+    /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-([0-9A-Za-z.-]+))?(?:\+[0-9A-Za-z.-]+)?$/;
   if (!semverRegex.test(versionStr)) {
     throw new Error(`Invalid semantic version format for NATIVE_VERSION: ${versionStr}`);
   }

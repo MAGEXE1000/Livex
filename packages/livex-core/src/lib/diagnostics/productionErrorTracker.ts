@@ -54,10 +54,21 @@ let activeOptions: ErrorTrackerOptions = {};
 export function scrubSensitivePII(text: string): string {
   if (!text || typeof text !== 'string') return '';
 
+  // Bound maximum scan payload to prevent uncontrolled resource exhaustion (CWE-400)
+  if (text.length > 50000) {
+    text = text.slice(0, 50000);
+  }
+
+  // 1. Redact Email Addresses with safe, bounded non-backtracking regex (CWE-1333)
+  if (text.includes('@')) {
+    text = text.replace(
+      /\b[a-zA-Z0-9][a-zA-Z0-9._%+-]{0,63}@[a-zA-Z0-9.-]{1,63}\.[a-zA-Z]{2,12}\b/gi,
+      '[REDACTED_EMAIL]'
+    );
+  }
+
   return (
     text
-      // 1. Redact Email Addresses
-      .replace(/[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+/gi, '[REDACTED_EMAIL]')
       // 2. Redact JWT / Bearer Tokens
       .replace(/Bearer\s+eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+/gi, 'Bearer [REDACTED_TOKEN]')
       .replace(/eyJ[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]{10,}/g, '[REDACTED_JWT]')

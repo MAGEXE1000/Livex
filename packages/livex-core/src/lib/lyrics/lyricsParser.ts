@@ -15,7 +15,7 @@ import type {
  * Regex detecting common musical chords (roots A-G with sharps/flats, extensions, and slash basses)
  */
 const CHORD_TOKEN_REGEX =
-  /^[A-G][b#]?(?:(?:maj|min|dim|aug|sus|add|m|M)[0-9]*(?:(?:sus|add)[0-9]*)?|[0-9]+(?:(?:sus|add|maj|min|dim|aug)[0-9]*)?)?(?:[#b][0-9]+)*(?:\([^)]*\))?(?:\/[A-G][b#]?)?$/;
+  /^[A-G][b#]?(?:(?:maj|min|dim|aug|sus|add|m|M)[0-9]*(?:(?:sus|add)[0-9]*)?|[0-9]+(?:(?:sus|add|maj|min|dim|aug)[0-9]*)?)?(?:[#b][0-9][0-9]?)?(?:[#b][0-9][0-9]?)?(?:\([^)]*\))?(?:\/[A-G][b#]?)?$/;
 
 /**
  * Common section header patterns

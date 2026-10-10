@@ -346,7 +346,7 @@ export function parseAndNormalizeVersion(raw: string | null | undefined): string
     return null;
   }
   const match = raw.match(
-    /[vV]?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?/
+    /[vV]?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-([0-9A-Za-z.-]+))?(?:\+[0-9A-Za-z.-]+)?/
   );
   if (!match) {
     logVersionTransformation('parseAndNormalizeVersion', raw, null);
@@ -368,7 +368,7 @@ export function parseSemver(raw: string | null | undefined): ParsedSemver | null
   }
 
   const m = clean.match(
-    /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/
+    /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-([0-9A-Za-z.-]+))?(?:\+[0-9A-Za-z.-]+)?$/
   );
   if (!m) {
     logVersionTransformation('parseSemver', raw, null);
@@ -378,6 +378,10 @@ export function parseSemver(raw: string | null | undefined): ParsedSemver | null
   // leading zeros. Reject e.g. "1.2.3-01" or "1.2.3-alpha.001".
   if (m[4]) {
     for (const id of m[4].split('.')) {
+      if (!id || !/^[0-9A-Za-z-]+$/.test(id)) {
+        logVersionTransformation('parseSemver', raw, null);
+        return null;
+      }
       if (/^\d+$/.test(id) && id.length > 1 && id.startsWith('0')) {
         logVersionTransformation('parseSemver', raw, null);
         return null;

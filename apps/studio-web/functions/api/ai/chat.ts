@@ -311,7 +311,7 @@ function extractStructuredRecommendation(text: string, prompt: string) {
   );
 
   const chordTokenRegex =
-    /`([A-G][b#]?[a-zA-Z0-9#b()\/+ø°^-]*)`|(?:\b([A-G][b#]?(?:maj|min|m|M|dim|aug|sus|add)[0-9]*(?:[#b][0-9]+)*(?:\([^)]+\))?(?:\/[A-G][b#]?)?)\b)/g;
+    /`([A-G][b#]?[a-zA-Z0-9#b()\/+ø°^-]*)`|(?:\b([A-G][b#]?(?:maj|min|m|M|dim|aug|sus|add)[0-9]*(?:[#b][0-9][0-9]?)?(?:\([^)]+\))?(?:\/[A-G][b#]?)?)\b)/g;
 
   if (progressionLineMatch) {
     const lineChords = [...progressionLineMatch[1].matchAll(chordTokenRegex)]
