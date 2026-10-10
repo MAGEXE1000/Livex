@@ -61,14 +61,14 @@ const mockAppInstaller = {
   getInstalledAppInfo: async () => ({
     versionName: '3.7.8',
     versionCode: 8,
-    signingSha256: '900cf259185c81100cda8bb08571fa23552e9789131cf07a8f4056e4d4129206',
+    signingSha256: '60a5aeb7af034f0d4b89c35deb17314eb6fb7743b67032d129cb24103a8268c9',
     packageName: 'com.chordex.app',
   }),
   inspectApk: async () => ({
     packageName: 'com.chordex.app',
     versionName: '3.7.8',
     versionCode: 8,
-    signingSha256: '900cf259185c81100cda8bb08571fa23552e9789131cf07a8f4056e4d4129206',
+    signingSha256: '60a5aeb7af034f0d4b89c35deb17314eb6fb7743b67032d129cb24103a8268c9',
     isValidApk: true,
   }),
   isInstallActive: async () => ({ active: false }),
@@ -181,10 +181,9 @@ globalThis.fetch = async (url, options) => {
 // Import compiled modules (require build to be completed first)
 const otaModulePath = path.join(repoRoot, 'packages/livex-core/dist/src/lib/updater/index.js');
 if (!fs.existsSync(otaModulePath)) {
-  console.error(
-    `Error: Compiled updater index not found at ${otaModulePath}. Run pnpm build first.`
-  );
-  process.exit(1);
+  const { execSync } = await import('node:child_process');
+  console.log('Compiling livex-core for updater regression tests...');
+  execSync('pnpm run typecheck:libs', { stdio: 'inherit', cwd: repoRoot });
 }
 
 const otaModuleUrl = `file://${otaModulePath.replace(/\\/g, '/')}`;
@@ -236,7 +235,7 @@ console.log(
   `[TESTS] Dynamic versioning: prev=${prevVersion}, current=${currentVersion}, next=${nextVersion}, nextNext=${nextNextVersion}`
 );
 
-const validSha256 = '900cf259185c81100cda8bb08571fa23552e9789131cf07a8f4056e4d4129206';
+const validSha256 = '60a5aeb7af034f0d4b89c35deb17314eb6fb7743b67032d129cb24103a8268c9';
 const validApkUrl = (v) => `https://studio-30f44.web.app/studio-${v}.apk`;
 
 async function runRegressionTests() {
@@ -397,7 +396,7 @@ async function runRegressionTests() {
           packageName: 'com.chordex.app',
           versionName: '3.7.8',
           versionCode: 8,
-          signingSha256: '900cf259185c81100cda8bb08571fa23552e9789131cf07a8f4056e4d4129206',
+          signingSha256: '60a5aeb7af034f0d4b89c35deb17314eb6fb7743b67032d129cb24103a8268c9',
           isValidApk: true,
         };
       }
@@ -405,7 +404,7 @@ async function runRegressionTests() {
         packageName: 'com.chordex.app',
         versionName: '3.7.71',
         versionCode: 136,
-        signingSha256: '900cf259185c81100cda8bb08571fa23552e9789131cf07a8f4056e4d4129206',
+        signingSha256: '60a5aeb7af034f0d4b89c35deb17314eb6fb7743b67032d129cb24103a8268c9',
         isValidApk: true,
       };
     };

@@ -65,30 +65,19 @@ async function runStartupRegressionTests() {
     );
   });
 
-  // Test 3: Authoritative Success Model Check
-  assertTest('UpdateIndicator.tsx authoritative success checks', () => {
-    let updatePath = path.join(
+  // Test 3: Authoritative Eradication Check for Google Play Store Compliance
+  assertTest('UpdateIndicator.tsx eradicated for Google Play compliance', () => {
+    const updatePath1 = path.join(
       repoRoot,
       'packages/ui-shared/src/features/updater/components/UpdateIndicator.tsx'
     );
-    if (!fs.existsSync(updatePath)) {
-      updatePath = path.join(
-        repoRoot,
-        'packages/ui-shared/src/components/update/UpdateIndicator.tsx'
-      );
-    }
-    const content = fs.readFileSync(updatePath, 'utf8');
-
-    // Assert that getLastInstallResult is not used on boot (success screen removed)
-    assert.ok(
-      !content.includes('getLastInstallResult()'),
-      'getLastInstallResult() is still used in UI causing startup success modal triggers'
+    const updatePath2 = path.join(
+      repoRoot,
+      'packages/ui-shared/src/components/update/UpdateIndicator.tsx'
     );
-
-    // Assert that clearInstallerLogHistory is called on Done click
     assert.ok(
-      content.includes('clearInstallerLogHistory()'),
-      'clearInstallerLogHistory() not invoked on Done button click'
+      !fs.existsSync(updatePath1) && !fs.existsSync(updatePath2),
+      'UpdateIndicator.tsx must remain eradicated from source tree for Google Play compliance'
     );
   });
 
