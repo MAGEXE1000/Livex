@@ -54,10 +54,14 @@ test('AndroidManifest configures dataExtractionRules and fullBackupContent', () 
   );
 });
 
-test('AndroidManifest completely eliminates READ_MEDIA_VIDEO', () => {
+test('AndroidManifest completely eliminates READ_MEDIA_VIDEO and READ_MEDIA_IMAGES', () => {
   assert(
     !manifestContent.includes('READ_MEDIA_VIDEO'),
     'android.permission.READ_MEDIA_VIDEO must be removed from AndroidManifest.xml'
+  );
+  assert(
+    !manifestContent.includes('READ_MEDIA_IMAGES'),
+    'android.permission.READ_MEDIA_IMAGES must be removed from AndroidManifest.xml'
   );
 });
 
@@ -80,7 +84,6 @@ test('AndroidManifest preserves all essential production permissions', () => {
     'android.permission.REQUEST_INSTALL_PACKAGES',
     'android.permission.READ_EXTERNAL_STORAGE',
     'android.permission.WRITE_EXTERNAL_STORAGE',
-    'android.permission.READ_MEDIA_IMAGES',
     'android.permission.READ_MEDIA_AUDIO',
   ];
 
@@ -164,8 +167,8 @@ test('AppInstallerPlugin does not declare READ_MEDIA_VIDEO or video alias', () =
   );
 });
 
-test('AppInstallerPlugin retains necessary image, audio, storage, and mic aliases', () => {
-  assert(pluginJavaContent.includes('alias = "images"'), 'Must retain images alias');
+test('AppInstallerPlugin retains necessary audio, storage, and mic aliases', () => {
+  assert(!pluginJavaContent.includes('alias = "images"'), 'Images alias must be removed');
   assert(pluginJavaContent.includes('alias = "audio"'), 'Must retain audio alias');
   assert(pluginJavaContent.includes('alias = "storage"'), 'Must retain storage alias');
   assert(pluginJavaContent.includes('alias = "microphone"'), 'Must retain microphone alias');
@@ -239,10 +242,10 @@ if (fs.existsSync(mergedManifestPath)) {
     );
   });
 
-  test('Merged Android manifest completely eliminates CAMERA permission', () => {
+  test('Merged Android manifest completely eliminates READ_MEDIA_IMAGES', () => {
     assert(
-      !mergedContent.includes('android.permission.CAMERA'),
-      'android.permission.CAMERA must not be present in merged manifest'
+      !mergedContent.includes('READ_MEDIA_IMAGES'),
+      'READ_MEDIA_IMAGES must be absent from merged manifest'
     );
   });
 
@@ -256,9 +259,9 @@ if (fs.existsSync(mergedManifestPath)) {
       'android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK',
       'android.permission.POST_NOTIFICATIONS',
       'android.permission.REQUEST_INSTALL_PACKAGES',
+      'android.permission.CAMERA',
       'android.permission.READ_EXTERNAL_STORAGE',
       'android.permission.WRITE_EXTERNAL_STORAGE',
-      'android.permission.READ_MEDIA_IMAGES',
       'android.permission.READ_MEDIA_AUDIO',
       'android.permission.RECEIVE_BOOT_COMPLETED',
       'android.permission.WAKE_LOCK',

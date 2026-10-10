@@ -52,9 +52,9 @@ function logVersionTransformation(
   _output: string | null
 ) {}
 
-export const NATIVE_VERSION = '4.7.4';
-export const NATIVE_VERSION_CODE = 40704;
-export const WEB_VERSION = '4.7.4';
+export const NATIVE_VERSION = '4.7.5';
+export const NATIVE_VERSION_CODE = 40705;
+export const WEB_VERSION = '4.7.5';
 const cap =
   (typeof window !== 'undefined' && (window as any).Capacitor) ||
   (typeof globalThis !== 'undefined' && (globalThis as any).Capacitor) ||
@@ -80,13 +80,13 @@ export const APP_VERSION_DATE = '10/2/2026';
  * Git commit hash this build was generated from.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_COMMIT_SHA = '6d98f31f';
+export const APP_COMMIT_SHA = '17e6b556';
 
 /**
  * Unix epoch timestamp this build was generated.
  * Stamped by `scripts/sync-versions.mjs` on build.
  */
-export const APP_BUILD_TIMESTAMP = '10/9/2026, 5:50:38 PM CST';
+export const APP_BUILD_TIMESTAMP = '10/9/2026, 8:55:33 PM CST';
 
 /**
  * Changelog for the CURRENT release — shown to the user the first
@@ -103,20 +103,11 @@ export interface ChangelogSection {
 
 export const APP_CHANGELOG_SECTIONS: ChangelogSection[] = [
   {
-    heading: 'Added',
-    items: [
-      'High-Craft Fallback Pages: Designed branded AMOLED 404 ("Frequency Not Found") and 500 ("Audio Stream Interrupted") fallback pages featuring carrier status badges, oscilloscope motifs, tactile recovery actions, and PII-sanitized diagnostics with zero stack trace leakage.',
-      'Production Error Tracking & Launch Rollback Runbooks: Integrated production exception capture with automated PII scrubbing (tokens, authorization headers, email addresses, and audio file stems) and created verified disaster recovery and rollback runbooks.',
-      'Reactive Local Stage Collaboration: Integrated local stage sync state machine with live camera QR scanner, guest waiting room, and synchronized multidevice teleprompter playback.',
-      'Google Play Store Marketing Suite: Integrated automated promo video, device frame screenshots, and feature graphic generator.',
-    ],
-  },
-  {
     heading: 'Fixed',
     items: [
-      'CodeQL Security Hardening: Eliminated all polynomial regular expression ReDoS vectors and prototype pollution vulnerabilities across chord resolution and core parsers.',
-      'Web Performance Optimization: Code-split heavyweight workstation engines (SongsPanel, DrumEditor, StageCorePanel, GroovexPlayer) using dynamic imports and Suspense, reducing the initial entry bundle to < 300KB (< 77KB gzipped).',
-      'Android Startup Hardening: Eliminated startup white screens, secured ContentResolver provider permissions, and configured full debug symbol extraction for compileSdkVersion 36.',
+      'Google Play Console Permission Compliance: Purged broad `READ_MEDIA_IMAGES` permission and alias from `AndroidManifest.xml` and native plugin bridges, ensuring 100% compliance with Google Play Photo and Video policy requirements.',
+      'Foreground Service Architecture: Maintained dedicated `FOREGROUND_SERVICE_MEDIA_PLAYBACK` for rock-solid background metronome and live performance lyrics sync, with full Play Console declaration guidance.',
+      'Synchronized Release Coordinates: Incremented target build to `4.7.5` (versionCode `40705`) for immediate Google Play Console release submission.',
     ],
   },
 ];
@@ -131,6 +122,15 @@ export interface ReleaseHistoryItem {
 }
 
 export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
+  {
+    version: '4.7.5',
+    date: '2026-10-09',
+    highlights: [
+      'Google Play Console Permission Compliance: Purged broad `READ_MEDIA_IMAGES` permission and alias from `AndroidManifest.xml` and native plugin bridges, ensuring 100% compliance with Google Play Photo and Video policy requirements.',
+      'Foreground Service Architecture: Maintained dedicated `FOREGROUND_SERVICE_MEDIA_PLAYBACK` for rock-solid background metronome and live performance lyrics sync, with full Play Console declaration guidance.',
+      'Synchronized Release Coordinates: Incremented target build to `4.7.5` (versionCode `40705`) for immediate Google Play Console release submission.',
+    ],
+  },
   {
     version: '4.7.4',
     date: '2026-10-09',
@@ -227,17 +227,6 @@ export const RELEASE_HISTORY: ReleaseHistoryItem[] = [
       'Floating Action Button Centerline Alignment: Centered the secondary cloud import button and primary FAB (+) button along the exact same X-axis center line, eliminating horizontal offset across mobile and tablet viewports.',
       'Song & Setlist Card Spatial Isolation: Replaced brittle child-sibling spacing with structured `flex flex-col gap-3` layout and per-card `mb-3 last:mb-0` margins, preventing card overlapping and border clashing across all Android WebView engines.',
       'Search Bar Vertical Spacing: Recalculated top layout rhythm to anchor the search bar directly below the interactive header with clean vertical breathing room.',
-    ],
-  },
-  {
-    version: '4.6.95',
-    date: '2026-10-03',
-    highlights: [
-      'Sample-Accurate Web Audio Visual Synchronization: Synchronized teleprompter visual beat pulses directly with Web Audio hardware DAC buffer output timing via `startVisualSyncLoop` lookahead clock alignment, eliminating the ~200ms perceptual lag between acoustic clicks and on-screen indicator illumination.',
-      'Repositioned Active Line Beat Indicator: Shifted teleprompter beat dots (`• • • •`) and bar progress counter (`bar X/Y`) into a dedicated in-flow sub-container directly beneath the lyric baseline with clean vertical breathing room (`marginTop: 8px`), eliminating overlap collisions with text, chords, and vocal badges.',
-      '"MNOME" Brand & Ligature Artifact Eradication: Purged unmapped Material Symbols icon glyphs across Live Topbar tempo pills, Tempo & Metronome Morph modal headers, and Audible Metronome toggle switches, removing fallback text string corruptions.',
-      'Topbar Chrome Sanitization: Removed the pulsing circular indicator dot beside the song title in Live Mode, presenting a clean, focused header layout.',
-      'Instantaneous Beat Dot Lighting: Set immediate CSS activation transitions (`transition: none !important`) on active beat dots to guarantee zero animation delay when downbeats strike.',
     ],
   },
 ];

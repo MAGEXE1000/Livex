@@ -28,10 +28,6 @@ import android.util.Log;
     name = "AppInstaller",
     permissions = {
         @Permission(
-            alias = "images",
-            strings = { Manifest.permission.READ_MEDIA_IMAGES }
-        ),
-        @Permission(
             alias = "audio",
             strings = { Manifest.permission.READ_MEDIA_AUDIO }
         ),
