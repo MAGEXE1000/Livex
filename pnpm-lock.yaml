@@ -261,8 +261,8 @@ importers:
         specifier: ^8.0.1
         version: 8.0.1(@capacitor/core@8.4.3)
       '@capacitor/status-bar':
-        specifier: ^8.0.2
-        version: 8.0.2(@capacitor/core@8.4.3)
+        specifier: ^8.0.4
+        version: 8.0.4(@capacitor/core@8.4.3)
       '@heroui/react':
         specifier: ^3.2.2
         version: 3.2.2(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(tailwindcss@4.3.2)
@@ -485,8 +485,8 @@ importers:
         specifier: ^8.0.1
         version: 8.0.1(@capacitor/core@8.4.3)
       '@capacitor/status-bar':
-        specifier: ^8.0.2
-        version: 8.0.2(@capacitor/core@8.4.3)
+        specifier: ^8.0.4
+        version: 8.0.4(@capacitor/core@8.4.3)
       '@radix-ui/react-dropdown-menu':
         specifier: ^2.1.20
         version: 2.1.20(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -588,8 +588,8 @@ importers:
         specifier: ^8.0.1
         version: 8.0.1(@capacitor/core@8.4.3)
       '@capacitor/status-bar':
-        specifier: ^8.0.2
-        version: 8.0.2(@capacitor/core@8.4.3)
+        specifier: ^8.0.4
+        version: 8.0.4(@capacitor/core@8.4.3)
       '@radix-ui/react-dropdown-menu':
         specifier: ^2.1.20
         version: 2.1.20(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -697,8 +697,8 @@ importers:
         specifier: ^8.0.1
         version: 8.0.1(@capacitor/core@8.4.3)
       '@capacitor/status-bar':
-        specifier: ^8.0.2
-        version: 8.0.2(@capacitor/core@8.4.3)
+        specifier: ^8.0.4
+        version: 8.0.4(@capacitor/core@8.4.3)
       '@heroui/react':
         specifier: ^3.2.2
         version: 3.2.2(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(tailwindcss@4.3.2)
@@ -824,8 +824,8 @@ importers:
         specifier: ^8.0.1
         version: 8.0.1(@capacitor/core@8.4.3)
       '@capacitor/status-bar':
-        specifier: ^8.0.2
-        version: 8.0.2(@capacitor/core@8.4.3)
+        specifier: ^8.0.4
+        version: 8.0.4(@capacitor/core@8.4.3)
       '@radix-ui/react-dropdown-menu':
         specifier: ^2.1.20
         version: 2.1.20(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -1090,8 +1090,8 @@ packages:
     peerDependencies:
       '@capacitor/core': 8.4.3
 
-  '@capacitor/status-bar@8.0.2':
-    resolution: {integrity: sha512-WXs8YB8B9eEaPZz+bcdY6t2nForF1FLoj/JU0Dl9RRgQnddnS98FEEyDooQhaY7wivr000j4+SC1FyeJkrFO7A==}
+  '@capacitor/status-bar@8.0.4':
+    resolution: {integrity: sha512-ZMzBUyHBzwDUxcHadEhvOvmoPmMQGMZgaMRJu8ohELeI6IaxoVH9ZhdF/OHnY3/yykv3Glev8Tnbh4aZY/0B0w==}
     peerDependencies:
       '@capacitor/core': 8.4.3
 
@@ -5642,7 +5642,7 @@ snapshots:
     dependencies:
       '@capacitor/core': 8.4.3
 
-  '@capacitor/status-bar@8.0.2(@capacitor/core@8.4.3)':
+  '@capacitor/status-bar@8.0.4(@capacitor/core@8.4.3)':
     dependencies:
       '@capacitor/core': 8.4.3
 
