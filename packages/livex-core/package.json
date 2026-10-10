@@ -25,7 +25,7 @@
     "@soundtouchjs/audio-worklet": "^2.1.0",
     "@supabase/supabase-js": "^2.110.2",
     "@tolgee/i18next": "^7.1.1",
-    "@tolgee/react": "^7.1.1",
+    "@tolgee/react": "^7.2.1",
     "clsx": "catalog:",
     "firebase": "^12.16.0",
     "i18next": "^26.3.6",

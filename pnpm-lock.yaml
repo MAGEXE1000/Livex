@@ -279,8 +279,8 @@ importers:
         specifier: ^7.1.1
         version: 7.1.1(i18next@26.3.6(typescript@5.7.3))
       '@tolgee/react':
-        specifier: ^7.1.1
-        version: 7.1.1(react@19.2.7)
+        specifier: ^7.2.1
+        version: 7.2.1(react@19.2.7)
       '@workspace/livex-core':
         specifier: workspace:*
         version: link:../../packages/livex-core
@@ -382,8 +382,8 @@ importers:
         specifier: ^7.1.1
         version: 7.1.1(i18next@26.3.6(typescript@5.7.3))
       '@tolgee/react':
-        specifier: ^7.1.1
-        version: 7.1.1(react@19.2.7)
+        specifier: ^7.2.1
+        version: 7.2.1(react@19.2.7)
       '@workspace/livex-core':
         specifier: workspace:*
         version: link:../../packages/livex-core
@@ -500,8 +500,8 @@ importers:
         specifier: ^7.1.1
         version: 7.1.1(i18next@26.3.6(typescript@5.7.3))
       '@tolgee/react':
-        specifier: ^7.1.1
-        version: 7.1.1(react@19.2.7)
+        specifier: ^7.2.1
+        version: 7.2.1(react@19.2.7)
       clsx:
         specifier: 'catalog:'
         version: 2.1.1
@@ -603,8 +603,8 @@ importers:
         specifier: ^7.1.1
         version: 7.1.1(i18next@26.3.6(typescript@5.7.3))
       '@tolgee/react':
-        specifier: ^7.1.1
-        version: 7.1.1(react@19.2.7)
+        specifier: ^7.2.1
+        version: 7.2.1(react@19.2.7)
       '@workspace/livex-core':
         specifier: workspace:*
         version: link:../livex-core
@@ -718,8 +718,8 @@ importers:
         specifier: ^7.1.1
         version: 7.1.1(i18next@26.3.6(typescript@5.7.3))
       '@tolgee/react':
-        specifier: ^7.1.1
-        version: 7.1.1(react@19.2.7)
+        specifier: ^7.2.1
+        version: 7.2.1(react@19.2.7)
       '@workspace/livex-core':
         specifier: workspace:*
         version: link:../livex-core
@@ -839,8 +839,8 @@ importers:
         specifier: ^7.1.1
         version: 7.1.1(i18next@26.3.6(typescript@5.7.3))
       '@tolgee/react':
-        specifier: ^7.1.1
-        version: 7.1.1(react@19.2.7)
+        specifier: ^7.2.1
+        version: 7.2.1(react@19.2.7)
       '@workspace/livex-core':
         specifier: workspace:*
         version: link:../livex-core
@@ -2500,18 +2500,24 @@ packages:
   '@tolgee/core@7.1.1':
     resolution: {integrity: sha512-RsrFJwFUyeI29BnLVNMSLDyPaAUWZGrF/LU1QUTZ13BACV+cW8wuqD/WwaDhlv3az+AFiCXVbhCi+cmlJUuc5g==}
 
+  '@tolgee/core@7.2.1':
+    resolution: {integrity: sha512-JA47ZTm413auqyALjsiElgIAZRg04Pmr2EciC5q5HHNSIn/E8oY14E12+c3YoLz7jVfQ6Psyt6fu8VGpgp+jwA==}
+
   '@tolgee/i18next@7.1.1':
     resolution: {integrity: sha512-IjOJ2wzKd5QsY7Sl0l8Dyuqxco2RXBaMRLsWlakSVxBCM/woXI0lR86ChDUidryL30WFanfxyLNNgLdlTKX03g==}
     peerDependencies:
       i18next: '*'
 
-  '@tolgee/react@7.1.1':
-    resolution: {integrity: sha512-UbwcRe75HHkDIsNuhB+IJZNtYTfqtty2tXP+z4RFjNlFmJ7HO+FxUpnr3nh5St6r5x4rrqPjJnjYOuJmMpSPNw==}
+  '@tolgee/react@7.2.1':
+    resolution: {integrity: sha512-HRL6wjQmMHUQdGaItsBDYCpMYHkTHcvQ420nyjkQ5qfqUZBqrONHajpX9KEOhigRXRPZUehy5jUnBiG8hZFmBw==}
     peerDependencies:
       react: ^16.14.0 || ^17.0.1 || ^18.1.0 || ^19
 
   '@tolgee/web@7.1.1':
     resolution: {integrity: sha512-ymMgbAIASrYJD1EGxj8Vt7NMltqVALEE2vqmXfsffrBvBfkloaNZ5fMMvDykoMLHThq9xgZFPWLrjLdIr9Z80A==}
+
+  '@tolgee/web@7.2.1':
+    resolution: {integrity: sha512-rCbXY/jGuOsckbAkuFZr5j41YcDFuBnub/sYIybBjbCMgG0aRil1JywGHQ5x/bASvNhcFfuv2LlxP3YGbQZqnA==}
 
   '@tootallnate/once@2.0.1':
     resolution: {integrity: sha512-HqmEUIGRJ5fSXchkVgR5F7qn48bDBzv0kWj/Kfu5e6uci4UlEeng4331LnBkWffb++Ei3FOVLxo8JJWMFBDMeQ==}
@@ -7119,19 +7125,25 @@ snapshots:
 
   '@tolgee/core@7.1.1': {}
 
+  '@tolgee/core@7.2.1': {}
+
   '@tolgee/i18next@7.1.1(i18next@26.3.6(typescript@5.7.3))':
     dependencies:
       '@tolgee/web': 7.1.1
       i18next: 26.3.6(typescript@5.7.3)
 
-  '@tolgee/react@7.1.1(react@19.2.7)':
+  '@tolgee/react@7.2.1(react@19.2.7)':
     dependencies:
-      '@tolgee/web': 7.1.1
+      '@tolgee/web': 7.2.1
       react: 19.2.7
 
   '@tolgee/web@7.1.1':
     dependencies:
       '@tolgee/core': 7.1.1
+
+  '@tolgee/web@7.2.1':
+    dependencies:
+      '@tolgee/core': 7.2.1
 
   '@tootallnate/once@2.0.1':
     optional: true
